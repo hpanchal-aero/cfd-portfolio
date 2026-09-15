@@ -7,6 +7,10 @@ wake dynamics cross-validated against an independent probe measurement.
 No further changes will be made to this case. Work is proceeding to
 additional slant angles in the case matrix.
 
+**Update:** the 0° slant angle case (`slant00_re4.18M_symtest`) has
+completed mesh generation and steady-baseline analysis — see Section
+10.5 below. Remaining angles (10°, 20°, 30°, 35°) still pending.
+
 ---
 
 ## 1. Engineering Objective
@@ -352,6 +356,160 @@ attempts, steady wall-function baseline, transient) are under
 `cases/`. Raw solver field/mesh data is excluded from version control
 (regenerable from scripts and dictionaries); quantitative results are
 preserved as `.npz` arrays and the figures in `results/`.
+
+---
+
+## 10.5. Case Matrix Progress — 0° Slant Angle (60 m/s)
+
+*Note: this section is a running log entry for the slant-angle sweep,
+added in the case's own working style rather than fully integrated
+into the numbered structure above. Will be consolidated when the
+README is rewritten after the full sweep completes.*
+
+**Case**: `slant00_re4.18M_symtest`. Same domain, BCs, turbulence
+model, and wall-function strategy as the 25° case (Sections 2-3),
+carried over as starting hypotheses and independently re-verified for
+this geometry rather than assumed.
+
+### Geometry
+STL verified: 332 triangles, watertight, meter-scale (L=1.044,
+W=0.389, H=0.288 m), volume 114.44 L — the largest in the sweep, as
+expected (least material removed at 0° slant; monotonic with the 25°
+body's 110.77 L).
+
+### Feature-angle investigation (new finding, not present in the 25°
+### workflow in this form)
+An independent PyVista-based feature-edge sweep and OpenFOAM's own
+`surfaceFeatures` utility were both used to determine
+`includedAngle`/`resolveFeatureAngle` for this geometry. This
+surfaced an important correction: **OpenFOAM's `includedAngle`
+convention is the opposite of what a naive reading of PyVista's
+`feature_angle` parameter suggests** — in OpenFOAM, higher values
+select MORE edges (180°=all edges, 0°=none), confirmed against source
+documentation, not assumed.
+
+A systematic angle sweep of OpenFOAM's actual `surfaceFeatures` output
+(`scripts/sweep_included_angle.py`) found a clean, unique answer:
+**`includedAngle 90` / `resolveFeatureAngle 90`** — exactly 8 genuine
+edges (4 rear box corners + 4 fillet-to-flat tangent-line corners),
+zero tessellation noise. At 89°: 0 edges detected at all. At 91° and
+above: edge count climbs continuously with no plateau, picking up
+fillet tessellation noise. This is a materially different value from
+the 25° case's 120°, because 0° geometry has plain right-angle box
+corners (no slant face), structurally different from 25°'s oblique
+slant/roof edges. **Confirms feature-angle settings do not transfer
+between slant angles and must be independently re-derived per case**
+— consistent with the project's standing "no assumed methodology
+transfer" principle (see Section 8/9 of the original workflow).
+
+### Mesh
+- `blockMesh`: 32,500 background cells — identical to the 25° case,
+  as expected (domain sizing is angle-independent, Section 2).
+- `snappyHexMesh`: the wall-function strategy (`addLayers false`,
+  surface refinement level (6,7)) was carried over from the validated
+  25° mesh as a starting hypothesis, **not assumed valid** — it
+  generalized successfully to this geometry. Result: 2,316,063 cells
+  (vs. 2,725,204 at 25°).
+- `checkMesh`: **Mesh OK.** Max non-orthogonality 44.9° (vs. 32.9° at
+  25°), max skewness 0.90 (vs. 0.95), max aspect ratio 4.26 (vs.
+  3.42). All comfortably within quality thresholds; the differences
+  are plausibly attributable to the sharp 90° corner geometry vs.
+  25°'s beveled slant, though this has not been independently
+  verified by inspecting where in the mesh these maxima occur.
+
+### Steady RANS baseline (SIMPLEC)
+Ran to 2000 iterations. A mid-run issue was found and corrected: the
+case's `controlDict` was discovered with `endTime 1000` instead of the
+intended `2000` (root cause not conclusively identified — most likely
+a copy/edit inconsistency, not a deeper problem); the run was resumed
+via `startFrom latestTime` after fixing the value, with no other
+changes.
+
+Residuals plateaued in the same qualitative pattern as the 25° case:
+Ux/Uy/Uz/p remained elevated (~1e-3 to 1e-2), only k/omega converged
+below the 1e-4 threshold.
+
+**Cd/FFT analysis required correcting two methodological errors before
+reaching a reliable conclusion — documented here because catching
+these errors is as important as the final result, per the project's
+standing integrity principle:**
+
+1. An initial full-window (iterations 1000-2000) FFT reported a
+   "dominant period" of 200.20 iterations; a half-window (1000-1500)
+   FFT reported 250.50 iterations. Both values are simple fractions of
+   their respective window lengths (1000/5 and 500/2) — the same
+   window-length-tracking artifact previously identified and corrected
+   in the 25° transient-case frequency analysis (Section 6.3 /
+   Section 9.3 above). Neither was a real signal.
+2. A sliding-window sweep (`scripts/sweep_steady_windows.py`, using
+   proper linear detrending rather than mean-subtraction) found a
+   period that stays consistent across multiple window lengths (200,
+   300, 500 iterations) and multiple start points, whenever the
+   window's internal linear trend was small: **~22.2-22.7 iterations**.
+   A subsequent single-window [1200,2000] FFT, even after correcting
+   the analysis script to use full linear detrending, still returned a
+   window-length-fraction artifact (200.25 ≈ 800/4) as its single
+   strongest peak. Reporting the top 5 spectral peaks (rather than
+   only the strongest) resolved this: the genuine ~22.5-iteration
+   signal was present and reasonably strong (ranks 3-4, power ratio
+   ~20,000x), while three window-length-fraction artifacts (800/2,
+   800/4, 800/5) dominated the top of the ranking — a clear
+   spectral-leakage signature (multiple peaks aligning with simple
+   fractions of one window length) rather than independent physical
+   modes.
+
+**Final result**: Cd mean (iterations 1200-2000) = 0.151413,
+std = 0.001857. Genuine limit-cycle period ≈ 22.5 iterations —
+distinct from the 25° case's 17.26-iteration steady-solve period.
+
+![0deg steady Cd history and FFT](results/slant00_re4.18M/steady_cd_fft.png)
+
+**Conclusion**: steady RANS does not converge to a fixed point at 0°
+either, consistent with the 25° finding. The underlying physical
+mechanism has not been independently confirmed to be the same kind of
+unsteadiness (no wake visualization has been done for 0° yet, unlike
+25°'s visually-confirmed "bubble pumping" mechanism) — this parallel
+is currently based on the Cd/residual signature alone, not
+cross-validated the same way 25° was.
+
+### Decision: transient-by-default for remaining angles
+Given two consecutive, independently-analyzed angles (0°, 25°) both
+show genuine steady-RANS non-convergence via a real limit cycle (not a
+numerical bug in either case), the remaining sweep angles (10°, 20°,
+30°, 35°) will proceed directly to transient PIMPLE, preceded by only
+a short (~200-300 iteration) steady sanity check per angle — not a
+full 2000-iteration run — to cheaply catch gross setup errors (bad
+BCs, mesh/field mismatches) before committing to transient compute
+time.
+
+This is treated as a **working assumption for this sweep, not a
+proven universal result**. In particular, 10°/20°/30° sit at or near
+Ahmed's documented drag-crisis transition, where the wake flow
+topology changes qualitatively (from more 3D, fully-separated flow to
+more 2D/attached-like behavior on the slant, or vice versa depending
+on direction of comparison) — it is not guaranteed that whatever
+produces non-convergence at 0° and 25° generalizes to that regime, and
+the short steady sanity-check is retained specifically to catch a
+surprise convergence result if one occurs, rather than assuming all
+five angles will behave identically.
+
+### New scripts developed for this case (reusable for future angles)
+- `scripts/sweep_included_angle.py` — runs OpenFOAM's actual
+  `surfaceFeatures` utility across a range of `includedAngle` values
+  and classifies extracted feature points by spatial region, to find
+  a clean feature-angle threshold without guessing.
+- `scripts/analyze_steady_cd.py` — Cd/Cl windowed-mean and FFT
+  stationarity analysis for a steady-state case, updated during this
+  investigation to use full linear detrending (not mean-only) and to
+  report the top 5 spectral peaks rather than only the strongest, both
+  changes made specifically because the mean-only/top-1 approach
+  produced misleading results on this case's data.
+- `scripts/sweep_steady_windows.py` — sliding-window sweep across
+  multiple window lengths and start points, used to distinguish a
+  genuine oscillation period (stable across window choices) from a
+  window-length FFT artifact (period tracks window size).
+
+---
 
 ## 11. References
 - Ahmed, S.R., Ramm, G., Faltin, G. (1984). *Some Salient Features of

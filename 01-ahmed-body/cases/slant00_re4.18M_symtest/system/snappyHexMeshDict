@@ -1,0 +1,141 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// 0deg case. Wall-function strategy carried over from the validated
+// 25deg case as a STARTING HYPOTHESIS (addLayers false, level (6 7)
+// surface refinement). Feature-angle settings (resolveFeatureAngle,
+// and includedAngle in surfaceFeaturesDict) are NOT carried over --
+// they were re-derived for this geometry via an independent feature-
+// edge sweep (geometry/inspect_features.py), since the 25deg values
+// were tuned for that body's oblique slant edges and do not apply to
+// this body's plain right-angle corners (no slant face at 0deg).
+castellatedMesh true;
+snap            true;
+addLayers       false;
+
+geometry
+{
+    ahmedBody
+    {
+        type triSurfaceMesh;
+        file "ahmedBody.stl";
+    }
+
+    // Wake refinement region: captures the near-wake region downstream
+    // of the body. Corrected from the 25deg case's dict, which specified
+    // y in [-0.35, 0.35] -- inconsistent with the half-domain (y in
+    // [0, 1.044], symmetry plane at y=0) actually used; the negative-y
+    // half of that box fell outside the domain and had no effect.
+    // Here the box is defined consistently with the half-domain from
+    // the start.
+    wakeRefinementBox
+    {
+        type searchableBox;
+        min (1.044  0.00 0.0);
+        max (4.176  0.35 0.7);
+    }
+}
+
+castellatedMeshControls
+{
+    maxLocalCells       200000;
+    maxGlobalCells      6000000;
+    minRefinementCells  10;
+    maxLoadUnbalance    0.10;
+    nCellsBetweenLevels 3;
+
+    features
+    (
+    );
+
+    refinementSurfaces
+    {
+        ahmedBody
+        {
+            // STARTING HYPOTHESIS, carried over from the validated
+            // 25deg wall-function mesh. Gated by checkMesh -- not
+            // assumed valid for this geometry without verification.
+            level (6 7);
+        }
+    }
+
+    // STARTING HYPOTHESIS for 0deg case, NOT validated/optimized.
+    // See surfaceFeaturesDict for the geometric reasoning (independent
+    // edge sweep: 0 edges detected at 100-170deg, 8 genuine edges at
+    // 90deg -- this geometry has plain ~90deg box corners, not the
+    // oblique slant edges the 25deg value of 120deg was tuned for).
+    resolveFeatureAngle 90;
+
+    refinementRegions
+    {
+        wakeRefinementBox
+        {
+            mode    inside;
+            levels  ((1e15 3));
+        }
+    }
+
+    // A point guaranteed to be inside the fluid domain (not inside the
+    // body or outside the background block). Same point as the 25deg
+    // case -- upstream and off to the side, far from the body, so it
+    // remains valid regardless of slant angle.
+    insidePoint (-1.5 0.5 1.0);
+
+    allowFreeStandingZoneFaces false;
+}
+
+snapControls
+{
+    nSmoothPatch    3;
+    tolerance       4.0;
+    nSolveIter      30;
+    nRelaxIter      5;
+    nFeatureSnapIter 10;
+}
+
+addLayersControls
+{
+    relativeSizes   false;
+
+    layers
+    {
+        // Empty: addLayers is false for the wall-function strategy.
+        // The 25deg case's dict carried forward stale 12-layer/y+~1
+        // settings from its abandoned wall-resolved attempt here;
+        // omitted entirely for this case rather than propagating
+        // misleading inactive values.
+    }
+}
+
+meshQualityControls
+{
+    maxNonOrtho             65;
+    maxBoundarySkewness     20;
+    maxInternalSkewness     4;
+    maxConcave              80;
+    minFlatness             0.5;
+    minVol                  -1e30;
+    minTetQuality           1e-30;
+    minTwist                0.02;
+    minDeterminant          0.001;
+    minFaceWeight           0.02;
+    minVolRatio             0.01;
+    nSmoothScale            4;
+    errorReduction          0.75;
+}
+
+mergeTolerance 1e-6;
+
+// ************************************************************************* //
