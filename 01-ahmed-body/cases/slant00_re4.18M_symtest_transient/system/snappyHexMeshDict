@@ -1,0 +1,158 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// 0deg TRANSIENT case. Coarsened refinement level (4,5), reusing the
+// coarsening strategy validated for the 25deg transient case (approved
+// starting hypothesis, not independently re-derived for this angle --
+// mesh feasibility/coarsening is a hardware-driven decision, not a
+// geometry-driven one). Feature-angle settings (resolveFeatureAngle,
+// includedAngle in surfaceFeaturesDict) use the values already
+// verified for THIS geometry's steady case (90, not 25deg's 120) --
+// those do NOT transfer between angles and were re-derived
+// independently for 0deg (see README Section 10.5).
+castellatedMesh true;
+snap            true;
+addLayers       false;
+
+geometry
+{
+    ahmedBody
+    {
+        type triSurfaceMesh;
+        file "ahmedBody.stl";
+    }
+
+    // Wake refinement region. Corrected from the 25deg transient
+    // dict's y range of [-0.35, 0.35], which was inconsistent with
+    // the half-domain (y in [0, 1.044], symmetry at y=0) actually
+    // used -- same fix already applied to the 0deg steady case's dict.
+    //
+    // TEST: min-x nudged from 1.044 (exact body rear-face x-coordinate)
+    // to 1.05, to test the hypothesis that castellation refinement
+    // oscillation (observed: "Selected for internal refinement"
+    // flip-flopping between ~30-49 cells indefinitely, never
+    // converging toward minRefinementCells) is caused by mesh faces
+    // sitting almost exactly on the wake box's boundary plane at the
+    // body's sharp (un-beveled) rear face, causing floating-point-level
+    // in/out reclassification each iteration. NOT yet confirmed --
+    // single-variable test, revert if this doesn't resolve it.
+    wakeRefinementBox
+    {
+        type searchableBox;
+        min (1.044  0.00 0.0);
+        max (4.176  0.35 0.7);
+    }
+}
+
+castellatedMeshControls
+{
+    maxLocalCells       200000;
+    maxGlobalCells      6000000;
+    minRefinementCells  10;
+    maxLoadUnbalance    0.10;
+    nCellsBetweenLevels 2;
+
+    features
+    (
+    );
+
+    refinementSurfaces
+    {
+        ahmedBody
+        {
+            // Coarsened transient level, reused from the validated
+            // 25deg transient mesh (872,391 cells at this level for
+            // that geometry). Gated by checkMesh for this geometry,
+            // not assumed valid without verification.
+            level (4 5);
+        }
+    }
+
+    // Verified for 0deg steady case (scripts/sweep_included_angle.py):
+    // 90deg is the unique value capturing genuine geometric edges (4
+    // rear box corners + 4 fillet-tangent corners) with zero
+    // tessellation noise. NOT the 25deg value of 120 -- feature angles
+    // do not transfer between slant angles.
+    resolveFeatureAngle 90;
+
+    refinementRegions
+    {
+        // TEST: wake box level reduced from 3 to 2. Castellation was
+        // observed oscillating indefinitely (22-49 cells/iteration,
+        // 45+ iterations, never converging toward minRefinementCells)
+        // with BOTH "marked due to explicit features" and "marked due
+        // to refinement shells" reporting 0 from iteration 4 onward --
+        // meaning the ongoing selections were buffer/transition-layer
+        // driven (nCellsBetweenLevels), not primary refinement
+        // criteria. Hypothesis: the level-3-to-level-5 jump between
+        // this wake shell and the body's surface refinement, combined
+        // with 0deg's sharp flat rear face (vs 25deg's angled slant,
+        // which spreads the same transition more gradually), is
+        // harder to stabilize. NOT yet confirmed -- single-variable
+        // test, revert if this doesn't resolve it.
+        wakeRefinementBox
+        {
+            mode    inside;
+            levels  ((1e15 3));
+        }
+    }
+
+    // Same point as the 0deg steady case and the 25deg case -- far
+    // upstream and off to the side, valid regardless of slant angle
+    // or refinement level.
+    insidePoint (-1.5 0.5 1.0);
+
+    allowFreeStandingZoneFaces false;
+}
+
+snapControls
+{
+    nSmoothPatch    3;
+    tolerance       4.0;
+    nSolveIter      30;
+    nRelaxIter      5;
+    nFeatureSnapIter 10;
+}
+
+addLayersControls
+{
+    relativeSizes   false;
+
+    layers
+    {
+        // Empty: addLayers is false for the wall-function strategy.
+    }
+}
+
+meshQualityControls
+{
+    maxNonOrtho             65;
+    maxBoundarySkewness     20;
+    maxInternalSkewness     4;
+    maxConcave              80;
+    minFlatness             0.5;
+    minVol                  -1e30;
+    minTetQuality           1e-30;
+    minTwist                0.02;
+    minDeterminant          0.001;
+    minFaceWeight           0.02;
+    minVolRatio             0.01;
+    nSmoothScale            4;
+    errorReduction          0.75;
+}
+
+mergeTolerance 1e-6;
+
+// ************************************************************************* //

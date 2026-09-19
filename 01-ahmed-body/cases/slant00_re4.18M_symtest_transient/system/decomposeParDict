@@ -1,0 +1,30 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      decomposeParDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// 8 subdomains: conservative choice (matches verified motorBike
+// tutorial), leaving CPU headroom for other concurrent workloads on
+// this machine. Physics/mesh/numerics completely unchanged -- this is
+// a pure computational speedup, not a numerical modification.
+numberOfSubdomains  8;
+decomposer      hierarchical;
+distributor     ptscotch;
+hierarchicalCoeffs
+{
+    // Domain is elongated in x (8.352m) vs y (1.044m half-domain) vs
+    // z (2.088m) -- favor more subdivisions in the long streamwise
+    // direction.
+    n               (4 2 1);
+    order           xyz;
+}
+// ************************************************************************* //

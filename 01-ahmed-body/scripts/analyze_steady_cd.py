@@ -45,13 +45,22 @@ def load_forcecoeffs(case_dir):
 
     frames = []
     for f in files:
-        df = pd.read_csv(
-            f,
-            comment="#",
-            sep=r"\s+",
-            header=None,
-            names=["Time", "Cm", "Cd", "Cl", "Cl_f", "Cl_r"],
-        )
+        df = pd.read_csv(f, comment="#", sep=r"\s+", header=None,
+                          names=["Time", "Cm", "Cd", "Cl", "Cl_f", "Cl_r"])
+
+        # Drop rows with any NaN values -- observed cause: a power-cut
+        # interruption during an active write truncates the file's
+        # final line mid-record, producing a partially or fully NaN
+        # row after parsing. These rows carry no valid data and, being
+        # at a restart boundary, are effectively duplicated by valid
+        # data from the next file's early rows after resume.
+        n_before = len(df)
+        df = df.dropna()
+        n_dropped = n_before - len(df)
+        if n_dropped > 0:
+            print(f"  {f}: dropped {n_dropped} NaN row(s) "
+                  f"(likely truncated write from an interruption)")
+
         frames.append(df)
         print(f"Loaded {f}: {len(df)} rows, iteration range "
               f"{df['Time'].min():.0f}-{df['Time'].max():.0f}")
