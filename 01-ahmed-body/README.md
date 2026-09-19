@@ -8,8 +8,10 @@ No further changes will be made to this case. Work is proceeding to
 additional slant angles in the case matrix.
 
 **Update:** the 0° slant angle case (`slant00_re4.18M_symtest`) has
-completed mesh generation and steady-baseline analysis — see Section
-10.5 below. Remaining angles (10°, 20°, 30°, 35°) still pending.
+completed mesh generation and steady-baseline analysis, and a
+transient PIMPLE investigation has been completed with an honest,
+inconclusive frequency result — see Section 10.5 below. Remaining
+angles (10°, 20°, 30°, 35°) still pending.
 
 ---
 
@@ -472,6 +474,74 @@ unsteadiness (no wake visualization has been done for 0° yet, unlike
 is currently based on the Cd/residual signature alone, not
 cross-validated the same way 25° was.
 
+### Transient PIMPLE investigation
+
+Following the same decision as the 25deg case (steady RANS shows a
+genuine limit cycle, not a fixed point), the case was converted to
+transient PIMPLE. Mesh coarsened using the same strategy validated at
+25deg (level (6,7)->(4,5)), but required an independent fix: the
+default `nCellsBetweenLevels 3` caused persistent, non-convergent
+castellation oscillation (22-49 cells/iteration, 45+ iterations, never
+reaching `minRefinementCells`) with both explicit-feature and
+refinement-shell selection criteria reporting 0 -- confirming the
+oscillation was buffer/transition-layer driven, not caused by the
+wake-refinement-box level or position (both tested and ruled out).
+Reducing `nCellsBetweenLevels` to 2 resolved it cleanly (851,401 cells,
+`checkMesh` OK, though max aspect ratio 6.20 is the highest seen in
+this project to date -- a real, accepted trade-off of this fix, not
+verified against solver stability beyond the runs performed).
+
+**Numerical tolerance trade-off, explicitly accepted**: to reduce
+wall-clock time given repeated hardware/scheduling constraints, the
+PIMPLE pressure-solver tolerances were loosened from the 25deg case's
+values (`pFinal` absolute tolerance 1e-7 -> 1e-4; non-final `p`
+`relTol` 0.01 -> 0.05), giving roughly 19% faster wall-clock time per
+unit of physical time. This measurably increased the reported "global"
+time step continuity error (from consistently near-zero/scattered at
+~1e-14 to a value that showed a monotonic within-stage drift up to
+~1e-13), though the absolute magnitude remains small relative to the
+flow. This is a genuine, documented deviation from the 25deg case's
+numerical settings, not a like-for-like comparison at the solver
+level.
+
+**Data-integrity incident**: the run was interrupted by power outages
+on two separate occasions, each truncating the actively-written
+`forceCoeffs.dat` file mid-record and producing a single NaN row per
+incident. These were identified and are now automatically dropped by
+all analysis scripts (`load_forcecoeffs` in
+`scripts/{analyze_steady_cd,inspect_early_transient,estimate_period_peaks}.py`)
+before deduplication -- confirmed the solver's own field data was
+unaffected (`startFrom latestTime` correctly resumed from the last
+valid write in each case), only the diagnostic force-coefficient log
+had truncated trailing rows.
+
+**Frequency/period result: inconclusive, documented honestly rather
+than forced to a number.** Peak-to-peak period measurements across
+progressively larger windows ([0.2,0.3], [0.3,0.45]) consistently
+showed high variability (CoV 46-48%) that did NOT improve with more
+data, unlike the clean convergence seen in the 25deg case's frequency
+analysis (CoV <1%). Measured inter-peak periods in the [0.3,0.45]s
+window were 0.0201, 0.0186, 0.0221, 0.0495, 0.0163 s -- three
+similar short periods, one notably longer gap, one short -- confirmed
+via re-detection at a lower prominence threshold to be a genuine
+feature of the signal (not a missed-peak artifact: no hidden cycle
+exists in the long gap). **This is read as tentative evidence that
+the 0deg wake oscillation may be irregular or amplitude-modulated
+rather than single-frequency, unlike 25deg's clean ~65 Hz signal** --
+but this is not confirmed with confidence, given the limited total
+runtime (0.45s) relative to what would be needed to establish this
+rigorously (e.g. via proper spectral analysis with many more cycles,
+or POD/DMD mode decomposition, neither of which was performed).
+
+![Full trajectory 0-0.45s](results/slant00_re4.18M_transient/full_trajectory_0_0.45.png)
+![Cd window 0.3-0.45s](results/slant00_re4.18M_transient/cd_window_0.3_0.45.png)
+![Peak detection, final](results/slant00_re4.18M_transient/peak_detection_final.png)
+
+No wake visualization has been performed for the 0deg transient case
+(unlike 25deg's 7-frame recirculation-bubble visualization), so no
+independent visual or physical-mechanism cross-check exists for this
+finding.
+
 ### Decision: transient-by-default for remaining angles
 Given two consecutive, independently-analyzed angles (0°, 25°) both
 show genuine steady-RANS non-convergence via a real limit cycle (not a
@@ -508,6 +578,24 @@ five angles will behave identically.
   multiple window lengths and start points, used to distinguish a
   genuine oscillation period (stable across window choices) from a
   window-length FFT artifact (period tracks window size).
+- `scripts/inspect_early_transient.py` — quick raw Cd/Cl trend
+  inspection for early-transient data, before a stationarity window is
+  expected to exist yet.
+- `scripts/compute_transient_deltat.py` — computes initial transient
+  deltaT from the actual generated mesh's finest cell size (direct
+  cell-extent measurement, cross-checked against a volume-based cube-
+  root proxy), rather than assuming a value from a different case's
+  mesh.
+- `scripts/estimate_period_peaks.py` — time-domain peak-to-peak period
+  estimation for transient Cd(t) signals, for cases with too few
+  cycles for a reliable FFT; reports CoV across measured periods
+  explicitly, with a caution flag when fewer than 3 periods are
+  available.
+
+All three shared-loading scripts (`analyze_steady_cd.py`,
+`inspect_early_transient.py`, `estimate_period_peaks.py`) now also
+drop NaN rows before deduplication, to handle truncated writes from
+power interruptions (see Data-integrity incident above).
 
 ---
 
