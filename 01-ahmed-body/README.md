@@ -537,10 +537,27 @@ or POD/DMD mode decomposition, neither of which was performed).
 ![Cd window 0.3-0.45s](results/slant00_re4.18M_transient/cd_window_0.3_0.45.png)
 ![Peak detection, final](results/slant00_re4.18M_transient/peak_detection_final.png)
 
-No wake visualization has been performed for the 0deg transient case
-(unlike 25deg's 7-frame recirculation-bubble visualization), so no
-independent visual or physical-mechanism cross-check exists for this
-finding.
+**Flow-field visualization**: a single-instant snapshot at t=0.45s
+(streamwise velocity and pressure contours, y=0.10m longitudinal
+slice, same slice convention as the 25deg case). This is explicitly
+NOT a wake-evolution sequence like 25deg's 7-frame recirculation-
+bubble visualization -- only two near-identical timesteps (t=0.449,
+t=0.45, 0.001s apart) survived in the actual oscillation region of
+this run, insufficient to show temporal evolution. The snapshot shows
+a reverse-flow recirculation region (Ux down to -30 m/s against a
+freestream that locally accelerates to ~85 m/s) coincident with a
+clear low-pressure core (down to ~-492 m^2/s^2, recovering toward
+freestream pressure downstream) -- consistent with the base-pressure
+signature of a near-wake recirculation bubble, structurally similar in
+character to 25deg's wake, though not confirmed as the same specific
+mechanism ("bubble pumping" vs. other unsteadiness) given the single-
+instant limitation. This provides a physical, visual cross-check that
+the flow structure is sensible and consistent with the Cd/Cl
+oscillation already documented, but does NOT independently confirm
+the frequency/period finding above, which remains inconclusive.
+
+![Velocity snapshot t=0.45s](results/slant00_re4.18M_transient/velocity_snapshot_t0.45.png)
+![Pressure snapshot t=0.45s](results/slant00_re4.18M_transient/pressure_snapshot_t0.45.png)
 
 ### Decision: transient-by-default for remaining angles
 Given two consecutive, independently-analyzed angles (0°, 25°) both
@@ -591,6 +608,12 @@ five angles will behave identically.
   cycles for a reliable FFT; reports CoV across measured periods
   explicitly, with a caution flag when fewer than 3 periods are
   available.
+- `scripts/visualize_snapshot.py` — single-instant velocity/pressure
+  contour visualization on a longitudinal slice; prints actual field
+  data statistics before rendering and auto-detects outlier-dominated
+  color scales (switching to percentile clipping), after an initial
+  render produced a misleadingly flat pressure plot traced to a few
+  extreme outlier cells dominating a naive min/max color range.
 
 All three shared-loading scripts (`analyze_steady_cd.py`,
 `inspect_early_transient.py`, `estimate_period_peaks.py`) now also
