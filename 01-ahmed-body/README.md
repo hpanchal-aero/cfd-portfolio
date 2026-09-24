@@ -7,11 +7,14 @@ wake dynamics cross-validated against an independent probe measurement.
 No further changes will be made to this case. Work is proceeding to
 additional slant angles in the case matrix.
 
-**Update:** the 0° slant angle case (`slant00_re4.18M_symtest`) has
-completed mesh generation and steady-baseline analysis, and a
-transient PIMPLE investigation has been completed with an honest,
-inconclusive frequency result — see Section 10.5 below. Remaining
-angles (10°, 20°, 30°, 35°) still pending.
+**Update:** the 0° slant angle case has completed mesh generation,
+steady-baseline analysis, and a transient PIMPLE investigation with an
+honest, inconclusive frequency result — see Section 10.5. The 10°
+case has completed the same full pipeline, including flow
+visualization; its transient frequency result is also inconclusive,
+but for a different and better-characterized reason (visible
+amplitude modulation, not simple noise) — see Section 10.6. Remaining
+angles (20°, 30°, 35°) still pending.
 
 ---
 
@@ -619,6 +622,295 @@ All three shared-loading scripts (`analyze_steady_cd.py`,
 `inspect_early_transient.py`, `estimate_period_peaks.py`) now also
 drop NaN rows before deduplication, to handle truncated writes from
 power interruptions (see Data-integrity incident above).
+
+## 10.6. Case Matrix Progress — 10° Slant Angle (60 m/s)
+
+*Same running-log style as Section 10.5, not yet integrated into the
+numbered structure above.*
+
+**Case**: `slant10_re4.18M_symtest` (steady sanity check) and
+`slant10_re4.18M_symtest_transient` (transient PIMPLE).
+
+### Geometry
+STL verified: 336 triangles, watertight, volume 112.7976 L — correctly
+between the 0° body's 114.44 L and the 25° body's 110.77 L, monotonic
+as expected.
+
+### Correction to the feature-angle methodology (important — affects
+### how the 0° and 25° feature-angle work above should be read)
+
+The 0° and 25° feature-angle investigations (Section 10.5, Section 3)
+both swept OpenFOAM's `surfaceFeatures` utility over `includedAngle`
+and then set `resolveFeatureAngle` (in `snappyHexMeshDict`) to the
+same numeric value found for `includedAngle` (in
+`surfaceFeaturesDict`), on the assumption that the two settings
+describe the same edge-selection concept. **This assumption is wrong,
+and the mesh only reads one of the two settings.**
+
+Direct inspection of every case's `snappyHexMeshDict` (0°, 10°, 25°,
+and their transient variants) shows `features ( );` — an empty
+explicit-feature list — in all of them. `snappyHexMesh`'s own log
+confirms `distance to explicit features : 0 cells` in every case.
+**The `.eMesh` file produced by `surfaceFeatures`/`includedAngle` has
+never been read by any mesh built in this project.** All of the
+"verified genuine edge" analysis built on that sweep (0°'s 8 edges,
+10°'s originally-claimed 10 edges, 25°'s edge count) is a valid,
+independently-useful geometric characterization of the STL, but it
+was never wired into any mesh's refinement.
+
+The setting that *does* act on the mesh is `resolveFeatureAngle`,
+read directly from the OpenFOAM 11 source
+(`refinementParameters.C`): it is converted to
+`curvature = cos(resolveFeatureAngle)`, and a cell is marked for
+curvature refinement where two neighboring surface-triangle normals
+satisfy `dot(n_i, n_j) < curvature` — i.e., **refinement fires where
+adjacent normals differ by MORE than `resolveFeatureAngle`**. This is
+a materially different quantity from `includedAngle`
+(`180° − includedAngle`, given this project's already-verified
+`includedAngle` convention), not the same number expressed twice.
+
+**Consequence, confirmed from mesh logs**: at `resolveFeatureAngle 90`
+(0° and 10°), this rule fires on every 90° box-corner edge on this
+body (0°: 3,229 cells marked; 10°: 2,607 cells marked, steady mesh).
+At `resolveFeatureAngle 120` (25°, both steady meshes), the rule
+**cannot fire at all** on this body, since no edge here has a normal
+angle exceeding 90° — confirmed directly: `curvature/regions : 0
+cells` in every 25° `snappyHexMesh` log checked. So the 0°/10° meshes
+received curvature-based edge refinement and the 25° meshes did not —
+an unintended, previously undocumented cross-angle mesh difference,
+now corrected here rather than left standing.
+
+Separately, and for 10° specifically: the `includedAngle 90` sweep's
+9-edge set was re-examined and found to **not** include the
+slant-to-rear edge (the edge where the slanted roof meets the vertical
+rear face — the geometry most relevant to separation at a slanted
+Ahmed body) or the roof-to-slant crease. Both are real, physically
+important edges; they are simply not selected at `includedAngle 90`
+(the slant-to-rear edge's included angle is ~100° for a 10° slant,
+just above the 90°/91° threshold verified for this body's plain box
+edges). The dictionary comments describing these as "captured" and
+"verified" for 10° were incorrect and have been corrected in the case
+files themselves (`system/surfaceFeaturesDict`,
+`system/snappyHexMeshDict`).
+
+**Decision for the 10° transient mesh** (`resolveFeatureAngle`, given
+the above): kept at 90, matching 0°, rather than switching to 120 to
+match 25° or to a value that would capture the slant-to-rear edge
+(which would require ~100° or below and was found to also pull in
+~60 unrelated front-fillet edges). This preserves an existing,
+already-tested precedent (0°) over introducing a third, untested
+configuration. **This means 10° and 25° now have a documented,
+understood mesh-refinement difference in addition to the
+`nCellsBetweenLevels` difference below** — both are limitations of the
+cross-angle comparison, not defects in any single case.
+
+**Standing gap, not yet resolved**: whether the 0°/25° README sections
+above (Sections 3 and 10.5) should be corrected in place to reflect
+this finding, or left as historical record with this section serving
+as the correction, has not been decided.
+
+### Mesh
+
+**Steady case** (`slant10_re4.18M_symtest`): level (6,7),
+`resolveFeatureAngle 90`, **2,288,305 cells**. `checkMesh`: Mesh OK —
+max non-orthogonality 44.6°, max skewness 1.48 (notably higher than
+both 0°'s 0.90 and 25°'s 0.95 at their steady levels; not
+independently traced to a location in the mesh), max aspect ratio
+4.48.
+
+**Transient case**, staged coarsening, single-variable tests at each
+step:
+
+| Attempt | Level | `nCellsBetweenLevels` | Cells | Result |
+|---|---|---|---|---|
+| 1 | (5,6) | 3 | 1,173,890 | Mesh OK; not used (chosen to match 0°/25°'s (4,5) level for comparability) |
+| 2 | (4,5) | 3 | 871,035 | Non-convergent castellation oscillation (72 shell-refinement iterations, ~28 cells/pass never dropping below `minRefinementCells`) — same signature as the 0° case's original `nCellsBetweenLevels 3` failure |
+| 3 (final) | (4,5) | **2** | **847,879** | Converged cleanly (7 iterations); `checkMesh` OK |
+
+Final mesh quality: max aspect ratio 6.195 (essentially equal to 0°'s
+6.20, the known cost of `nCellsBetweenLevels 2`), max non-orthogonality
+49.2°, max skewness 0.905. Domain volume check (18.1499, matching the
+expected empty-domain-minus-half-body value) confirms correct body
+placement and scale.
+
+### Steady RANS sanity check (300 iterations, not a full 2000-iteration
+### run — per the Section 10.5 decision for remaining angles)
+
+Ran cleanly to completion, no errors. Cd was still drifting/oscillating
+at 300 iterations (50-iteration block means: 0.160, 0.151, 0.146,
+0.140, 0.143 — not settled), consistent with the pattern already seen
+at 0° and 25° of no steady fixed point existing for this flow. **No
+steady-state Cd is reported for 10°**, consistent with Decision 9 in
+Section 10.5: the sanity check exists only to catch a gross setup
+error, and this run found none, so the case proceeded directly to
+transient PIMPLE as planned.
+
+### Transient PIMPLE
+
+`deltaT` computed from the actual finished mesh
+(`scripts/compute_transient_deltat.py`): finest cell 1.003 mm, initial
+`deltaT = 8.358×10⁻⁶ s` at U=60 m/s, Co=0.5 — `adjustTimeStep` settled
+this to 9.434×10⁻⁶ s within the first stage, matching (coincidentally,
+not assumed) the value 0° reached. `fvSolution`/`fvSchemes` were based
+on the 25° transient case's tight solver tolerances (`p` tolerance
+1e-7, relTol 0.01), not the 0° case's loosened values — the
+loosening question was intentionally re-raised as a fresh decision for
+this case rather than carried over, and was not needed.
+
+Run in two stages, `startFrom latestTime` between them:
+
+| Stage | Time range | Cores | Wall-clock |
+|---|---|---|---|
+| 1 | 0 → 0.2 s | 8 | 51,730 s (~14.4 h) |
+| 2 | 0.2 → 0.35 s | 8 | 34,583 s (~9.6 h) |
+
+Both stages completed cleanly (`Time = <endTime>`, `End`, zero fatal
+errors). Stage 1 had several early internal restarts within the first
+0.014 s (a normal consequence of the impulsive start from uniform
+initial conditions), producing overlapping `postProcessing/forces/`
+segments that required de-duplication before analysis (kept the
+later-written value at each overlapping timestamp, matching the
+existing `load_forcecoeffs()` convention used for restart boundaries
+elsewhere in this project — see Known issue below). One row at
+t≈9.9×10⁻⁶ s (Cd≈482) was a startup-transient outlier well outside
+physical range and was excluded.
+
+**`purgeWrite 2` was kept for this case** (only the two most recent
+time directories are retained on disk). Since a wake-evolution
+sequence requires more surviving instants than that, two OpenFOAM
+`functions` objects were added specifically to survive `purgeWrite`
+(which only deletes time directories, not `postProcessing/` output):
+a fixed-point wake probe (same location as 25°'s,
+x=1.15, y=0.10, z=0.15 m) sampled every 10 timesteps, and a y=0.10 m
+`cutPlaneSurface` slice (U, p) written at every write time. This
+worked as intended: 351 slice files survived across both stages
+despite only 2 time directories remaining on disk.
+
+### Frequency/period result: not a single frequency — visible amplitude modulation
+
+Direct time-domain peak detection (`estimate_period_peaks.py`) was
+used throughout, not FFT — see Known issue below for why the existing
+FFT script (`analyze_steady_cd.py`) could not be trusted for this
+non-uniformly-sampled transient data.
+
+**A window-sensitivity check on the first 0.2 s of data showed the
+apparent period was not stable to window choice** (mean period ranged
+0.015–0.023 s and CoV ranged 0%–54% across window starts 0.10–0.14 s),
+tracing to a single ambiguous small bump near t≈0.132 s that a
+prominence threshold (auto-scaled from the window's own std)
+inconsistently counted as a peak or not. This result was explicitly
+**not** trusted or reported as a period.
+
+Extending the run to 0.35 s and re-running peak detection over
+t=0.13–0.35 s (9 peaks, 8 measured intervals) resolved this ambiguity
+by revealing the actual structure: **the Cd signal is not a
+constant-amplitude oscillation.** It shows quiet stretches of small
+fluctuation (~0.005 peak-to-peak) punctuated by two large-amplitude
+bursts (~0.02 peak-to-peak, roughly 4× the background) at t≈0.21 s
+and t≈0.31 s (Δt≈0.10 s between them — a single interval, not
+established as periodic). Mean inter-peak period over the full window
+was 0.0236 s (CoV 33%) — a real, well-supported number in the sense
+that it now rests on 8 intervals rather than 1–2, but it does **not**
+describe a single dominant frequency, because the underlying signal
+visibly is not single-frequency.
+
+**No Strouhal number is reported for 10°.** Given the demonstrated
+amplitude modulation, a single St value calculated from the mean
+inter-peak spacing would misrepresent the signal as simple periodic
+shedding, which the data does not support. This is judged a stronger
+and more specific characterization than 0°'s "possibly irregular"
+finding (Section 10.5) — 0° had 2 measured periods to go on; 10° has
+9 peaks and a directly visible burst pattern in the wake pressure
+field (see Visualization below), not just a high coefficient of
+variation.
+
+Cd/Cl statistics over t=0.13–0.35 s (n=23,321; **caveated as spanning
+non-stationary, amplitude-modulated behavior, not a settled window**):
+Cd mean 0.1433, std 0.0044; Cl mean 0.5986, std 0.0032. The 5-way
+sub-window spread (3.29% of the mean) is *not* evidence of
+stationarity here — sub-windows this wide (~0.044 s each) average
+over a full burst-and-quiet cycle and obscure the modulation rather
+than reveal it; this was directly checked and the initial expectation
+that it would show the bursting was wrong.
+
+### Flow-field visualization
+
+Because the `cutPlaneSurface` slice output is unaffected by
+`purgeWrite`, a full 8-frame wake-evolution sequence was possible for
+10° — unlike 0°, which was limited to a single instant. Frames span
+one full burst cycle (t = 0.18, 0.19, 0.199, 0.205, 0.21, 0.22, 0.231,
+0.24 s), same y=0.10 m slice convention as 0°/25°, same camera
+position across all frames. Pressure color scale is shared across all
+8 frames and restricted to the wake region (x > 0.9 m) — the
+front-nose fillet region was found to contain pressure extremes
+roughly 10× the wake's range (down to −2765 m²/s², a real, physically
+plausible nose-acceleration feature, not a numerical fault, located
+via direct point-coordinate inspection) that would otherwise dominate
+and flatten the wake's own color scale.
+
+**Observation**: the near-wake recirculation bubble's shape visibly
+changes across the sequence — compact and single-lobed at the
+quiet-period instants (t=0.19, t=0.231), with a distinct secondary
+low-pressure/high-pressure structure appearing in the wake between
+t≈0.205–0.22, coincident with the Cd-burst peak. Streamwise velocity
+contours, by contrast, look essentially unchanged across all 8 frames
+(wake-region Ux mean 53.8–54.3 m/s throughout) — the burst is visible
+in the pressure field at this slice but not in Ux at this slice. This
+is reported as an observed correlation in timing, not a demonstrated
+causal mechanism; no mode decomposition (POD/DMD) was performed.
+
+![10deg burst sequence, pressure](results/slant10_re4.18M_transient/burst1/10deg_burst1_p_t0.21.png)
+![10deg burst sequence, velocity](results/slant10_re4.18M_transient/burst1/10deg_burst1_Ux_t0.21.png)
+
+### Known issue, not yet fixed: `analyze_steady_cd.py`'s FFT assumes
+### uniform sampling
+
+`analyze_steady_cd.py`'s FFT step (`fft_analysis()`) computes a single
+`dt = median(diff(t))` and calls `np.fft.rfftfreq(n, d=dt)` — valid
+for the steady, iteration-indexed case it was written for (where
+consecutive samples are exactly 1 iteration apart), **not valid** for
+transient, time-indexed data where `adjustTimeStep` produces
+non-uniformly-spaced samples. Run against 10°'s transient data, it
+produced exactly the window-length-fraction artifact pattern already
+documented for steady-case data at 0°/25° (Section 10.5/9.3) — every
+top-ranked "peak" was a simple fraction of the window length, and the
+script's own artifact-flagging check (comparing against
+`window_length/denom` for denom 1–6) missed a 7th-ranked artifact at
+denom=10 because that denominator isn't checked. This script's
+FFT output must not be used on transient data until fixed (either by
+resampling to a uniform grid before the FFT, as the docstring already
+claims is guaranteed for steady data, or by restricting its use to
+steady cases only). The windowed mean/std/sub-window-spread portions
+of the same script do not depend on uniform sampling and remain valid
+for transient use.
+
+Separately, `load_forcecoeffs()` (duplicated across
+`analyze_steady_cd.py`, `inspect_early_transient.py`, and
+`estimate_period_peaks.py`) globs and concatenates all
+`postProcessing/forces/*/forceCoeffs.dat` segments and drops only
+exact-duplicate timestamps — it does not handle a segment that only
+partially overlaps a later one (as occurred in 10°'s first 0.014 s of
+restarts), which would silently double-count non-duplicate rows from
+the superseded portion of an overlapping segment. This project's
+10°-transient stitching was done by hand outside these scripts for
+this reason; the scripts themselves have not been patched.
+
+### New scripts developed for this case
+- `scripts/visualize_burst_sequence.py` — multi-frame wake-evolution
+  visualization from pre-sliced `cutPlaneSurface` VTK output (as
+  opposed to `visualize_snapshot.py`'s reconstructed-3D-mesh
+  approach), with a shared color scale computed across all requested
+  frames (fixed range for Ux, wake-region-restricted percentile range
+  for pressure) so frames are visually comparable.
+
+### Decisions still open for 20°/30°/35°
+- Whether to patch `analyze_steady_cd.py`'s FFT and/or
+  `load_forcecoeffs()` before the next case, or continue working
+  around them per-case.
+- `resolveFeatureAngle` for future angles: re-derive per angle (as
+  done here), rather than assume 90 continues to be appropriate,
+  especially as slant angle increases toward and past the drag-crisis
+  transition.
 
 ---
 

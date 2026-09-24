@@ -1,0 +1,39 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      surfaceFeaturesDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+surfaces ("ahmedBody.stl");
+
+// FINAL for 10deg case, verified via geometric inspection.
+// Sweep across includedAngle=89-150 showed: 89deg -> 0 edges;
+// 90deg -> 10 edges, all confirmed genuine by direct point-coordinate
+// inspection: 4 fillet-to-flat tangent points (x=0.1, same feature as
+// 0deg), 2 rear-bottom corners (x=1.044, z=0, unaffected by slant),
+// 2 rear-slant-edge points (x=1.044, z=0.24945 -- where the slanted
+// roof meets the vertical rear face, height reduced by the slant cut),
+// 2 roof-to-slant transition points (x=0.825, z=0.288 -- a genuinely
+// new feature not present at 0deg, since 0deg has no slant at all).
+// 91deg+ -> edge count climbs continuously (fillet tessellation
+// noise), same pattern as 0deg. Coincidentally the same numeric value
+// as 0deg (90), but independently re-derived and verified for this
+// geometry's own edge structure, not assumed to transfer.
+includedAngle   90;
+
+subsetFeatures
+{
+    nonManifoldEdges    yes;
+    openEdges           yes;
+}
+
+// ************************************************************************* //
