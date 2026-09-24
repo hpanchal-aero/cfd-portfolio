@@ -1,0 +1,86 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// HALF-DOMAIN, 12-LAYER CONTROLLED TEST (see mesh_development_log.md).
+// Domain: 8L total length, 1L half-width (symmetry plane at y=0), 2L
+// height. Background cell size in y matches the full-domain case
+// (~0.0835m/cell) via 13 cells across the halved 1.044m width.
+convertToMeters 1;
+vertices
+(
+    (-2.088  0.000 0)      // 0
+    ( 6.264  0.000 0)      // 1
+    ( 6.264  1.044 0)      // 2
+    (-2.088  1.044 0)      // 3
+    (-2.088  0.000 2.088)  // 4
+    ( 6.264  0.000 2.088)  // 5
+    ( 6.264  1.044 2.088)  // 6
+    (-2.088  1.044 2.088)  // 7
+);
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) (100 13 25) simpleGrading (1 1 1)
+);
+boundary
+(
+    inlet
+    {
+        type patch;
+        faces
+        (
+            (0 4 7 3)
+        );
+    }
+    outlet
+    {
+        type patch;
+        faces
+        (
+            (2 6 5 1)
+        );
+    }
+    ground
+    {
+        type wall;
+        faces
+        (
+            (0 3 2 1)
+        );
+    }
+    top
+    {
+        type patch;
+        faces
+        (
+            (4 5 6 7)
+        );
+    }
+    symmetryPlane
+    {
+        type symmetryPlane;
+        faces
+        (
+            (1 5 4 0)
+        );
+    }
+    farfield
+    {
+        type patch;
+        faces
+        (
+            (3 7 6 2)
+        );
+    }
+);
+// ************************************************************************* //

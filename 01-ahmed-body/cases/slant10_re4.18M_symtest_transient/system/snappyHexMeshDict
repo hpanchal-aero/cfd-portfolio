@@ -1,0 +1,144 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// 10deg TRANSIENT case. Coarsened from the steady case's level (6 7) to
+// level (4 5), chosen to match 0deg/25deg. A (5 6) mesh was built first
+// (1173890 cells, checkMesh OK) and not used. Level and nCellsBetweenLevels are the only changes
+// from the steady 10deg dictionary apart from comments.
+// Wall-function strategy: addLayers false.
+//
+// FEATURE HANDLING (corrected): the "features" list below is empty, so
+// no .eMesh file is read and no explicit feature snapping is expected.
+// The only setting acting on edges is resolveFeatureAngle, which is a
+// separate parameter from includedAngle in surfaceFeaturesDict. An
+// earlier version of this comment claimed resolveFeatureAngle 90 had
+// been "verified" against the edge structure via the surfaceFeatures
+// sweep. That claim was wrong: the sweep measured a utility this mesh
+// does not read.
+castellatedMesh true;
+snap            true;
+addLayers       false;
+
+geometry
+{
+    ahmedBody
+    {
+        type triSurfaceMesh;
+        file "ahmedBody.stl";
+    }
+
+    // Wake refinement region, consistent with the half-domain
+    // (y in [0, 1.044], symmetry at y=0) from the start -- same fix
+    // already applied and verified at 0deg.
+    wakeRefinementBox
+    {
+        type searchableBox;
+        min (1.044  0.00 0.0);
+        max (4.176  0.35 0.7);
+    }
+}
+
+castellatedMeshControls
+{
+    maxLocalCells       200000;
+    maxGlobalCells      6000000;
+    minRefinementCells  10;
+    maxLoadUnbalance    0.10;
+
+    // STARTING HYPOTHESIS: 3 (OpenFOAM default). At 0deg's coarsened
+    // transient mesh this had to be reduced to 2; at 25deg it did not.
+    // 10deg (4 5): 3 gave a 72-iteration shell loop (oscillation);
+    // set to 2 (user decision). Fallback if 2 fails: level (5 6), 3.
+    nCellsBetweenLevels 2;
+
+    features
+    (
+    );
+
+    refinementSurfaces
+    {
+        ahmedBody
+        {
+            // Transient level (4 5), matching 0deg/25deg (user decision).
+            // Gated by checkMesh and cell count, not assumed valid.
+            level (4 5);
+        }
+    }
+
+    // Kept at 90 (user decision) to match 0deg. In the steady 10deg
+    // mesh this setting marked 2607 cells under "curvature/regions" in
+    // the snappyHexMesh log; where those cells are was not inspected.
+    // The 25deg meshes use 120 and marked zero cells, so this is a known
+    // cross-angle mesh difference to document as a limitation.
+    resolveFeatureAngle 90;
+
+    refinementRegions
+    {
+        wakeRefinementBox
+        {
+            mode    inside;
+            levels  ((1e15 3));
+        }
+    }
+
+    // Same point as the 0deg/25deg cases -- far upstream and off to
+    // the side, valid regardless of slant angle.
+    insidePoint (-1.5 0.5 1.0);
+
+    allowFreeStandingZoneFaces false;
+}
+
+snapControls
+{
+    nSmoothPatch    3;
+    tolerance       4.0;
+    nSolveIter      30;
+    nRelaxIter      5;
+
+    // Not expected to do anything: the features list above is empty.
+    // Kept unchanged from the steady case (not verified in the log).
+    nFeatureSnapIter 10;
+}
+
+addLayersControls
+{
+    relativeSizes   false;
+
+    layers
+    {
+        // Empty: addLayers is false for the wall-function strategy.
+    }
+}
+
+meshQualityControls
+{
+    maxNonOrtho             65;
+    maxBoundarySkewness     20;
+    maxInternalSkewness     4;
+    maxConcave              80;
+    minFlatness             0.5;
+    minVol                  -1e30;
+    minTetQuality           1e-30;
+    minTwist                0.02;
+    minDeterminant          0.001;
+    minFaceWeight           0.02;
+    minVolRatio             0.01;
+    nSmoothScale            4;
+    errorReduction          0.75;
+}
+
+mergeTolerance 1e-6;
+
+// ************************************************************************* //

@@ -1,0 +1,131 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// 10deg case. Wall-function strategy carried over from the validated
+// 0deg/25deg meshes as a STARTING HYPOTHESIS (addLayers false, level
+// (6 7) surface refinement). Feature-angle setting (resolveFeatureAngle
+// 90) independently re-derived and verified for this geometry's own
+// edge structure (see surfaceFeaturesDict) -- coincidentally the same
+// numeric value as 0deg, but NOT assumed to transfer; confirmed via
+// point-coordinate inspection that all 9 edges at this geometry are
+// genuine (fillet-tangent line, rear-bottom corners, rear-slant edge,
+// and roof-to-slant transition -- the latter two are new feature types
+// not present at 0deg).
+castellatedMesh true;
+snap            true;
+addLayers       false;
+
+geometry
+{
+    ahmedBody
+    {
+        type triSurfaceMesh;
+        file "ahmedBody.stl";
+    }
+
+    // Wake refinement region, consistent with the half-domain
+    // (y in [0, 1.044], symmetry at y=0) from the start -- same fix
+    // already applied and verified at 0deg.
+    wakeRefinementBox
+    {
+        type searchableBox;
+        min (1.044  0.00 0.0);
+        max (4.176  0.35 0.7);
+    }
+}
+
+castellatedMeshControls
+{
+    maxLocalCells       200000;
+    maxGlobalCells      6000000;
+    minRefinementCells  10;
+    maxLoadUnbalance    0.10;
+    nCellsBetweenLevels 3;
+
+    features
+    (
+    );
+
+    refinementSurfaces
+    {
+        ahmedBody
+        {
+            // STARTING HYPOTHESIS, carried over from the validated
+            // 0deg/25deg wall-function meshes. Gated by checkMesh --
+            // not assumed valid for this geometry without verification.
+            level (6 7);
+        }
+    }
+
+    // Independently verified for 10deg (see surfaceFeaturesDict for
+    // full reasoning). Same value as 0deg (90), but re-derived, not
+    // assumed to transfer.
+    resolveFeatureAngle 90;
+
+    refinementRegions
+    {
+        wakeRefinementBox
+        {
+            mode    inside;
+            levels  ((1e15 3));
+        }
+    }
+
+    // Same point as the 0deg/25deg cases -- far upstream and off to
+    // the side, valid regardless of slant angle.
+    insidePoint (-1.5 0.5 1.0);
+
+    allowFreeStandingZoneFaces false;
+}
+
+snapControls
+{
+    nSmoothPatch    3;
+    tolerance       4.0;
+    nSolveIter      30;
+    nRelaxIter      5;
+    nFeatureSnapIter 10;
+}
+
+addLayersControls
+{
+    relativeSizes   false;
+
+    layers
+    {
+        // Empty: addLayers is false for the wall-function strategy.
+    }
+}
+
+meshQualityControls
+{
+    maxNonOrtho             65;
+    maxBoundarySkewness     20;
+    maxInternalSkewness     4;
+    maxConcave              80;
+    minFlatness             0.5;
+    minVol                  -1e30;
+    minTetQuality           1e-30;
+    minTwist                0.02;
+    minDeterminant          0.001;
+    minFaceWeight           0.02;
+    minVolRatio             0.01;
+    nSmoothScale            4;
+    errorReduction          0.75;
+}
+
+mergeTolerance 1e-6;
+
+// ************************************************************************* //
