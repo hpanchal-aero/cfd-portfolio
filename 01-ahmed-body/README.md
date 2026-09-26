@@ -13,8 +13,14 @@ honest, inconclusive frequency result — see Section 10.5. The 10°
 case has completed the same full pipeline, including flow
 visualization; its transient frequency result is also inconclusive,
 but for a different and better-characterized reason (visible
-amplitude modulation, not simple noise) — see Section 10.6. Remaining
-angles (20°, 30°, 35°) still pending.
+amplitude modulation, not simple noise) — see Section 10.6. The 20°
+case has also completed the same full pipeline (steady baseline
+skipped entirely by decision, not just shortened); its transient
+frequency result is likewise inconclusive, this time due to too few
+measured cycles (CoV 43% on only 3 intervals) rather than amplitude
+modulation or drift — see Section 10.7, which also documents a newly
+found peak-detection prominence-sensitivity issue. Remaining angles
+(30°, 35°) still pending.
 
 ---
 
@@ -913,6 +919,211 @@ this reason; the scripts themselves have not been patched.
   transition.
 
 ---
+
+## 10.7. Case Matrix Progress — 20° Slant Angle (60 m/s)
+
+*Same running-log style as Sections 10.5/10.6, not yet integrated into
+the numbered structure above.*
+
+**Case**: `slant20_re4.18M_symtest` (steady sanity check only — the
+full 2000-iteration steady baseline was skipped entirely for this
+angle, per an explicit decision, going further than Section 10.5's
+"short sanity check" default for 0°/10°) and
+`slant20_re4.18M_symtest_transient` (transient PIMPLE).
+
+### Geometry
+STL verified: 336 triangles, watertight, volume 111.3560 L — correctly
+between the 10° body's 112.7976 L and the 25° body's 110.7653 L,
+continuing the monotonic decreasing-volume trend with increasing
+slant angle.
+
+### Feature-angle investigation and `resolveFeatureAngle` decision
+
+Following the Section 10.6 correction (`resolveFeatureAngle` and
+`includedAngle` are different parameters; only the former acts on any
+mesh in this project), the `includedAngle` sweep was run purely as a
+geometric characterization tool, not as mesh configuration. Result:
+`includedAngle 90` gives 9 edges (matching every other angle's plain
+box-edge structure); the slant-to-rear separation edge appears between
+`includedAngle 108` and `110` (confirmed via direct eMesh
+point-coordinate inspection: a new transverse edge at z=0.212 m,
+consistent with a 20° slant reducing the rear-face height further
+than 10°'s z=0.24945 m) -- closely matching the geometric prediction
+of ~90°+slant angle = 110°.
+
+**Decision, made explicitly for this angle (option B, distinct from
+0°/10°'s option A)**: `resolveFeatureAngle` was set to **70°**, aiming
+to capture the slant-to-rear edge (predicted threshold ~180-109=71°,
+via the confirmed source relationship). This was verified, not
+assumed: the steady 20° mesh's `snappyHexMesh` log shows 3,103 cells
+marked under `curvature/regions` (vs. 10°'s 2,607 at
+`resolveFeatureAngle 90`), confirming the setting does fire on this
+geometry. The exact spatial location of the marked cells (i.e.,
+whether they are concentrated at the intended slant-to-rear edge or
+elsewhere) was not independently confirmed via direct spatial
+inspection -- a deferred diagnostic, not a resolved point.
+
+**This is now a third distinct `resolveFeatureAngle` configuration
+across the sweep** (0°/10°: 90°; 25°: 120°, fires on nothing; 20°:
+70°, deliberately chosen to fire on an additional edge) -- each
+independently justified for its own geometry, per this project's
+standing no-transfer-assumed principle, but adding a third dimension
+of cross-angle mesh difference to document as a limitation.
+
+### Mesh
+
+**Steady case**: level (6,7), `resolveFeatureAngle 70`, **2,282,758
+cells**. `checkMesh`: Mesh OK -- max non-orthogonality **55.4°**
+(noticeably higher than 0°'s 44.9° and 10°'s 44.6°, the first case in
+this project where this metric is not similar in magnitude to its
+predecessors -- no independent explanation established), max skewness
+1.496, max aspect ratio 5.30.
+
+**Transient case**, staged coarsening:
+
+| Attempt | Level | `nCellsBetweenLevels` | Cells | Result |
+|---|---|---|---|---|
+| 1 | (5,6) | 3 | 1,176,428 | Mesh OK; not used (chosen for comparability with 0°/10°/25° at (4,5)) |
+| 2 | (4,5) | 3 | 874,395 | Non-convergent castellation oscillation (71 shell-refinement iterations, 21-29 cells/pass) -- third confirmed instance of this failure mode in the project (also seen at 0° and 10°) |
+| 3 (final) | (4,5) | **2** | **849,762** | Converged cleanly (7 iterations); `checkMesh` OK |
+
+Final mesh quality: max aspect ratio **5.097** (notably *lower* than
+0°'s 6.20 and 10°'s 6.195 at the same settings -- breaks what had
+looked like an emerging pattern; not explained), max non-orthogonality
+51.67°, max skewness **1.708** (the highest of any mesh in this
+project to date). All values pass `meshQualityControls` thresholds.
+Domain volume check (18.1506, matching the expected value) confirms
+correct body placement.
+
+### Steady RANS sanity check -- full baseline skipped
+
+Per an explicit decision for this angle, the full 2000-iteration
+steady baseline (as run for 0° and 25°) was skipped entirely; only
+the short (~300-iteration) sanity check from Section 10.5's decision
+was run. Ran cleanly to completion, no errors. Cd was still
+monotonically decreasing through all 5 usable 50-iteration blocks
+(0.176->0.169->0.163->0.161->0.160), not yet showing any sign of
+flattening within 300 iterations, consistent with (but not
+conclusively demonstrating) the same non-convergence pattern seen at
+0°/10°/25°. **No steady-state Cd is reported for 20°.**
+
+### Transient PIMPLE
+
+`deltaT` computed from the actual finished mesh: finest cell 1.195 mm
+(notably larger than 0°/10°'s ~1.003 mm, plausibly related to this
+mesh's different `resolveFeatureAngle`-driven local refinement
+structure, not independently confirmed), initial
+`deltaT = 9.958e-06 s` at U=60 m/s, Co=0.5. `fvSolution`/`fvSchemes`
+from 25°'s tight-tolerance transient values, matching the 10° case's
+approach (no loosening decision was needed).
+
+Run in a single stage, 0 -> 0.2 s, 8 cores: **71,227 s (~19.8 hours)**
+wall-clock -- approximately 40% longer than 10°'s equivalent stage
+(51,730 s) despite comparable mesh size and identical target time.
+Cause not established (candidate factors: the larger finest-cell size
+requiring more early adjustTimeStep cutback, or the higher mesh
+skewness slowing pressure-solver convergence -- neither verified).
+
+Data integrity: unlike 0° and 10°, this run produced **only one
+`postProcessing/forces` segment** (no internal restart fragmentation),
+simplifying analysis -- no stitching was required. One known-class
+startup outlier (Cd~392 at t~1.18e-05 s) was identified and excluded,
+consistent with the same early-transient spike seen at 0° and 10°.
+Full record otherwise clean: 0 NaN, 0 duplicate timestamps, genuinely
+monotonic (an initial monotonicity check falsely flagged a violation
+due to an uninitialized-comparison bug in the ad-hoc verification
+script, not a real data issue -- corrected and reconfirmed).
+
+### Frequency/period result: inconclusive, with a new methodological
+### finding on peak-detection prominence
+
+Direct time-domain peak detection (`estimate_period_peaks.py`) over
+t=0.1-0.2 s at the tool's default auto-scaled prominence threshold
+produced a badly contaminated result: 28 "peaks," most clustered in
+groups of 6-16 spaced only ~12 microseconds apart -- solver-timestep-
+level numerical noise being misidentified as distinct oscillation
+events, not a real signal (mean period 0.0032s, CoV 245%, nonsensical
+St=1.52). **This is a new failure mode, distinct from the window-
+length FFT artifact and the window-sensitivity issue already
+documented for 0°/10°.**
+
+A prominence sweep (0.0007 to 0.004, a 5.7x range) found a **stable
+plateau of exactly 4 genuine peaks** at every tested value in that
+range (t = 0.1135, 0.1249, 0.1592, 0.1791 s) -- confirming these are
+real, robust local maxima, not threshold-dependent artifacts. Values
+below this range recover noise; a value of 0.005 (initially tried)
+over-suppressed and dropped two of the four genuine peaks, showing
+the default auto-scaled threshold and a naively-chosen high threshold
+can both fail, in opposite directions.
+
+**Result**: 3 measured intervals (0.0115, 0.0343, 0.0199 s), mean
+period 0.0219 s, **CoV 43%** -- too few and too irregular to
+characterize a frequency, with one notably large gap (0.0343 s)
+between peaks 2 and 3 that could indicate either genuine irregularity
+(as found at 10°) or an unresolved intermediate cycle. **No Strouhal
+number is reported for 20°.** Given the wall-clock cost of extending
+this case (stage 1 alone took ~19.8 hours), the run was not extended;
+this is documented as an inconclusive result at t=0.2s, the same
+honest treatment given to 0°'s frequency finding, rather than forced
+to a number.
+
+### Flow-field visualization
+
+An 8-frame sequence spanning the full analyzed window (t = 0.108,
+0.113, 0.125, 0.148, 0.159, 0.173, 0.179, 0.194 s -- bracketing the 4
+identified peaks and intervening troughs) was rendered at the same
+y=0.10 m slice, same wake-restricted (x>0.9m) shared pressure color
+scale established at 10°. Named `sequence` rather than `burst1`, since
+this case's peak-detection did not resolve a clean, repeatable burst
+cycle the way 10° did -- the naming avoids implying a mechanism that
+was not established.
+
+**Observation**: the wake pressure structure shows real, visible
+frame-to-frame variation -- most notably a distinct isolated
+high-pressure feature embedded in the wake at t=0.125s (closest
+sampled frame to the second identified peak, t=0.1249s), not present
+in most other frames. Streamwise velocity, unlike at 10° (where it
+was frame-invariant), also shows a visible structural change at
+t=0.125s and t=0.173s -- a pale intrusion into the otherwise uniform
+freestream region above the shear layer, absent or much weaker in the
+other 6 frames. **This correspondence is partial, not comprehensive**:
+only 2 of the 4 identified force-signal peaks (t=0.113, 0.125, 0.159,
+0.179) show visually distinctive structure in either field; t=0.113
+and t=0.179 do not stand out visually the way t=0.125 does. The
+visualization is reported as showing real unsteady wake structure,
+not as confirming or explaining the (inconclusive) peak-detection
+result.
+
+![20deg sequence, pressure](results/slant20_re4.18M_transient/sequence/20deg_sequence_p_t0.125.png)
+![20deg sequence, velocity](results/slant20_re4.18M_transient/sequence/20deg_sequence_Ux_t0.125.png)
+
+### New methodological finding: peak-detection prominence sensitivity
+
+`estimate_period_peaks.py`'s default auto-scaled prominence (10% of
+the window's Cd std) is not universally safe: at 20°, it caught
+solver-timestep-level noise as spurious peaks, producing a
+badly-wrong result (CoV 245%) that would have been reported as a
+"measurement" without the sweep-and-cross-check applied here.
+**Any future use of this tool should include a prominence sweep
+across at least a 5x range before trusting a single-threshold
+result**, the same discipline already established for FFT window
+choice (Section 10.6) and window-start sensitivity (Section 10.6's
+10° window check). The tool itself has not been modified to
+auto-detect this failure mode; this remains a manual verification
+step.
+
+### Decisions still open for 30°/35°
+- Whether `resolveFeatureAngle` should continue to be independently
+  derived per angle (as done for 20°) as the sweep approaches and
+  passes Ahmed's documented drag-crisis region, or whether a pattern
+  will emerge that simplifies this.
+- The unexplained mesh-quality metrics (20°'s uncharacteristically
+  high non-orthogonality and skewness, its lower-than-expected aspect
+  ratio) remain unexplained -- no case in the sweep has yet had its
+  mesh quality maxima spatially located and inspected.
+- Whether to formally add the prominence-sweep step into
+  `estimate_period_peaks.py` itself (e.g., an automatic sweep-and-
+  flag mode) rather than performing it manually per case.
 
 ## 11. References
 - Ahmed, S.R., Ramm, G., Faltin, G. (1984). *Some Salient Features of
