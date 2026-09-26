@@ -1,0 +1,64 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// 20deg TRANSIENT (PIMPLE), level (4 5) mesh, nCellsBetweenLevels 2,
+// resolveFeatureAngle 70 (option B). deltaT from
+// scripts/compute_transient_deltat.py on THIS mesh (dx 1.195 mm,
+// U 60 m/s, Co 0.5); adjustTimeStep takes over from there.
+// endTime is the first stage only; extended in stages via latestTime.
+// purgeWrite 2 carried forward from the 10deg case; wake probe and
+// y=0.10m slice (unaffected by purgeWrite) preserve wake-evolution
+// data, same fix as 10deg.
+application     foamRun;
+solver          incompressibleFluid;
+startFrom       startTime;
+startTime       0;
+stopAt          endTime;
+endTime         0.2;
+deltaT          9.958322e-06;
+adjustTimeStep  yes;
+maxCo           0.5;
+writeControl    adjustableRunTime;
+writeInterval   0.001;
+purgeWrite      2;
+writeFormat     ascii;
+writePrecision  6;
+writeCompression off;
+timeFormat      general;
+timePrecision   6;
+runTimeModifiable true;
+
+functions
+{
+    #include "forceCoeffs"
+
+    wakeProbes
+    {
+        #include "wakeProbes"
+        writeControl    timeStep;
+        writeInterval   10;
+    }
+
+    cutPlaneSurface
+    {
+        point       (0 0.10 0);
+        normal      (0 1 0);
+        fields      (U p);
+        interpolate true;
+        #includeEtc "caseDicts/postProcessing/surface/cutPlaneSurface.cfg"
+    }
+}
+
+// ************************************************************************* //

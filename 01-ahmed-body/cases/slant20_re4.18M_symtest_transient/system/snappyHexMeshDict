@@ -1,0 +1,126 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// 20deg TRANSIENT case, level (4 5), matching 0deg/10deg/25deg. A
+// (5 6) mesh was built first (1176428 cells, checkMesh OK, no
+// oscillation) and not used (user decision B). nCellsBetweenLevels 3
+// 3 gave a 71-iteration shell loop (oscillation, same signature as
+// 0deg/10deg); set to 2 (user-established fix, third confirmed case).
+//
+// resolveFeatureAngle 70 (option B, user decision): CONFIRMED via
+// direct snappyHexMesh log inspection on the steady 20deg mesh to
+// actually fire (3103 cells marked under curvature/regions, vs
+// 10deg's 2607 at resolveFeatureAngle 90) -- unlike a value chosen
+// from includedAngle-space reasoning alone. The predicted slant-to-
+// rear edge (~109deg included angle -> ~71deg resolveFeatureAngle,
+// see surfaceFeaturesDict) is expected to be captured, though the
+// spatial location of the marked cells has not been independently
+// confirmed (a diagnostic check was proposed but deferred in favor
+// of proceeding to the transient stage per user instruction).
+castellatedMesh true;
+snap            true;
+addLayers       false;
+
+geometry
+{
+    ahmedBody
+    {
+        type triSurfaceMesh;
+        file "ahmedBody.stl";
+    }
+
+    wakeRefinementBox
+    {
+        type searchableBox;
+        min (1.044  0.00 0.0);
+        max (4.176  0.35 0.7);
+    }
+}
+
+castellatedMeshControls
+{
+    maxLocalCells       200000;
+    maxGlobalCells      6000000;
+    minRefinementCells  10;
+    maxLoadUnbalance    0.10;
+
+    nCellsBetweenLevels 2;
+
+    features
+    (
+    );
+
+    refinementSurfaces
+    {
+        ahmedBody
+        {
+            level (4 5);
+        }
+    }
+
+    resolveFeatureAngle 70;
+
+    refinementRegions
+    {
+        wakeRefinementBox
+        {
+            mode    inside;
+            levels  ((1e15 3));
+        }
+    }
+
+    insidePoint (-1.5 0.5 1.0);
+
+    allowFreeStandingZoneFaces false;
+}
+
+snapControls
+{
+    nSmoothPatch    3;
+    tolerance       4.0;
+    nSolveIter      30;
+    nRelaxIter      5;
+    nFeatureSnapIter 10;
+}
+
+addLayersControls
+{
+    relativeSizes   false;
+
+    layers
+    {
+    }
+}
+
+meshQualityControls
+{
+    maxNonOrtho             65;
+    maxBoundarySkewness     20;
+    maxInternalSkewness     4;
+    maxConcave              80;
+    minFlatness             0.5;
+    minVol                  -1e30;
+    minTetQuality           1e-30;
+    minTwist                0.02;
+    minDeterminant          0.001;
+    minFaceWeight           0.02;
+    minVolRatio             0.01;
+    nSmoothScale            4;
+    errorReduction          0.75;
+}
+
+mergeTolerance 1e-6;
+
+// ************************************************************************* //

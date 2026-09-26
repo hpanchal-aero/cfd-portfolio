@@ -1,0 +1,130 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// 20deg case, STEADY SANITY-CHECK mesh (level 6,7 -- matches 0deg/10deg
+// steady convention). Wall-function strategy (addLayers false),
+// carried over as a starting hypothesis, gated by checkMesh.
+//
+// resolveFeatureAngle: TEST VALUE, option B (user decision). Geometric
+// reasoning (see surfaceFeaturesDict / includedAngle sweep, diagnostic
+// only -- not read by this mesh): the slant-to-rear separation edge on
+// this body has an includedAngle of ~109 deg (confirmed by direct
+// eMesh inspection: a new rear transverse edge at z=0.212 appears
+// between includedAngle 108 and 110). Via the confirmed source-code
+// relationship resolveFeatureAngle ~= 180 - includedAngle
+// (refinementParameters.C, verified during the 10deg investigation),
+// this predicts resolveFeatureAngle ~71 to capture that edge. Set to
+// 70 here for margin. THIS PREDICTION HAS NOT YET BEEN CONFIRMED
+// against actual curvature-marking behavior in this mesh's log --
+// that check follows immediately after this mesh is built.
+castellatedMesh true;
+snap            true;
+addLayers       false;
+
+geometry
+{
+    ahmedBody
+    {
+        type triSurfaceMesh;
+        file "ahmedBody.stl";
+    }
+
+    // Wake refinement region, half-domain-consistent (y in [0, 0.35]).
+    wakeRefinementBox
+    {
+        type searchableBox;
+        min (1.044  0.00 0.0);
+        max (4.176  0.35 0.7);
+    }
+}
+
+castellatedMeshControls
+{
+    maxLocalCells       200000;
+    maxGlobalCells      6000000;
+    minRefinementCells  10;
+    maxLoadUnbalance    0.10;
+    nCellsBetweenLevels 3;
+
+    features
+    (
+    );
+
+    refinementSurfaces
+    {
+        ahmedBody
+        {
+            // STARTING HYPOTHESIS, matching 0deg/10deg steady level.
+            level (6 7);
+        }
+    }
+
+    // TEST VALUE -- see header comment. Not yet confirmed against
+    // mesh log behavior.
+    resolveFeatureAngle 70;
+
+    refinementRegions
+    {
+        wakeRefinementBox
+        {
+            mode    inside;
+            levels  ((1e15 3));
+        }
+    }
+
+    insidePoint (-1.5 0.5 1.0);
+
+    allowFreeStandingZoneFaces false;
+}
+
+snapControls
+{
+    nSmoothPatch    3;
+    tolerance       4.0;
+    nSolveIter      30;
+    nRelaxIter      5;
+    nFeatureSnapIter 10;
+}
+
+addLayersControls
+{
+    relativeSizes   false;
+
+    layers
+    {
+        // Empty: addLayers is false for the wall-function strategy.
+    }
+}
+
+meshQualityControls
+{
+    maxNonOrtho             65;
+    maxBoundarySkewness     20;
+    maxInternalSkewness     4;
+    maxConcave              80;
+    minFlatness             0.5;
+    minVol                  -1e30;
+    minTetQuality           1e-30;
+    minTwist                0.02;
+    minDeterminant          0.001;
+    minFaceWeight           0.02;
+    minVolRatio             0.01;
+    nSmoothScale            4;
+    errorReduction          0.75;
+}
+
+mergeTolerance 1e-6;
+
+// ************************************************************************* //
