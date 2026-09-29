@@ -1,0 +1,123 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// 30deg case, STEADY SANITY-CHECK mesh (level 6,7 -- matches 0/10/20deg
+// steady convention). Wall-function strategy (addLayers false).
+//
+// resolveFeatureAngle 120 (option C, user decision): matches 25deg's
+// value. NOT assumed to behave the same way on this geometry --
+// 25deg's edge structure showed zero curvature marking at 120 (no
+// edge on that body exceeds 90deg normal-angle difference). This
+// body's slant-to-rear edge sits at ~119.5deg includedAngle, which
+// via the confirmed relationship (resolveFeatureAngle ~= 180 -
+// includedAngle) corresponds to a normal-angle difference of ~60.5deg
+// -- PREDICTED to be below the 120deg threshold, meaning this edge is
+// predicted NOT to fire curvature refinement here either. This
+// prediction is checked against the actual mesh log immediately after
+// this mesh is built, not assumed.
+castellatedMesh true;
+snap            true;
+addLayers       false;
+
+geometry
+{
+    ahmedBody
+    {
+        type triSurfaceMesh;
+        file "ahmedBody.stl";
+    }
+
+    wakeRefinementBox
+    {
+        type searchableBox;
+        min (1.044  0.00 0.0);
+        max (4.176  0.35 0.7);
+    }
+}
+
+castellatedMeshControls
+{
+    maxLocalCells       200000;
+    maxGlobalCells      6000000;
+    minRefinementCells  10;
+    maxLoadUnbalance    0.10;
+    nCellsBetweenLevels 3;
+
+    features
+    (
+    );
+
+    refinementSurfaces
+    {
+        ahmedBody
+        {
+            level (6 7);
+        }
+    }
+
+    resolveFeatureAngle 120;
+
+    refinementRegions
+    {
+        wakeRefinementBox
+        {
+            mode    inside;
+            levels  ((1e15 3));
+        }
+    }
+
+    insidePoint (-1.5 0.5 1.0);
+
+    allowFreeStandingZoneFaces false;
+}
+
+snapControls
+{
+    nSmoothPatch    3;
+    tolerance       4.0;
+    nSolveIter      30;
+    nRelaxIter      5;
+    nFeatureSnapIter 10;
+}
+
+addLayersControls
+{
+    relativeSizes   false;
+
+    layers
+    {
+    }
+}
+
+meshQualityControls
+{
+    maxNonOrtho             65;
+    maxBoundarySkewness     20;
+    maxInternalSkewness     4;
+    maxConcave              80;
+    minFlatness             0.5;
+    minVol                  -1e30;
+    minTetQuality           1e-30;
+    minTwist                0.02;
+    minDeterminant          0.001;
+    minFaceWeight           0.02;
+    minVolRatio             0.01;
+    nSmoothScale            4;
+    errorReduction          0.75;
+}
+
+mergeTolerance 1e-6;
+
+// ************************************************************************* //

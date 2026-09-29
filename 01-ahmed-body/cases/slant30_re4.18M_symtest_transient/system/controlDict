@@ -1,0 +1,68 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// 30deg TRANSIENT (PIMPLE), level (5 6) mesh (kept, NOT stepped down to
+// (4 5) -- option A, user decision, breaks consistency with
+// 0/10/20/25deg). resolveFeatureAngle 120, confirmed to fire on ZERO
+// cells for this geometry (matches 25deg). deltaT from
+// scripts/compute_transient_deltat.py on THIS mesh (dx 1.485 mm,
+// U 60 m/s, Co 0.5) -- larger than every (4,5)-level angle's finest
+// cell despite the finer nominal surface level; not fully explained,
+// possibly related to the absence of curvature-driven refinement here.
+// Single stage direct to endTime 0.2 (user instruction -- no
+// sanity-check run was performed for this case at all).
+// purgeWrite 2 with wake probe + y=0.10m slice (unaffected by
+// purgeWrite) to preserve wake-evolution data, same fix as 10/20deg.
+application     foamRun;
+solver          incompressibleFluid;
+startFrom       latestTime;
+startTime       0;
+stopAt          endTime;
+endTime         0.2;
+deltaT          1.237504e-05;
+adjustTimeStep  yes;
+maxCo           0.5;
+writeControl    adjustableRunTime;
+writeInterval   0.001;
+purgeWrite      2;
+writeFormat     ascii;
+writePrecision  6;
+writeCompression off;
+timeFormat      general;
+timePrecision   6;
+runTimeModifiable true;
+
+functions
+{
+    #include "forceCoeffs"
+
+    wakeProbes
+    {
+        #include "wakeProbes"
+        writeControl    timeStep;
+        writeInterval   10;
+    }
+
+    cutPlaneSurface
+    {
+        point       (0 0.10 0);
+        normal      (0 1 0);
+        fields      (U p);
+        interpolate true;
+        #includeEtc "caseDicts/postProcessing/surface/cutPlaneSurface.cfg"
+    }
+}
+
+// ************************************************************************* //
