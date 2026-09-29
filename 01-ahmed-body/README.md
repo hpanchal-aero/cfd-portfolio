@@ -19,8 +19,16 @@ skipped entirely by decision, not just shortened); its transient
 frequency result is likewise inconclusive, this time due to too few
 measured cycles (CoV 43% on only 3 intervals) rather than amplitude
 modulation or drift — see Section 10.7, which also documents a newly
-found peak-detection prominence-sensitivity issue. Remaining angles
-(30°, 35°) still pending.
+found peak-detection prominence-sensitivity issue. The 30° case —
+the angle closest to Ahmed's documented drag-crisis transition —
+skipped the steady solver run entirely (not just the full baseline)
+and kept its transient mesh at level (5,6) rather than stepping down
+to (4,5); its frequency result is a fourth distinct kind of
+inconclusive outcome (continuous multi-scale fluctuation with no
+stable amplitude threshold), and its flow visualization shows a
+wake field that is nearly frame-invariant despite the irregular
+force signal — see Section 10.8. Remaining angle (35°) still
+pending.
 
 ---
 
@@ -1124,6 +1132,222 @@ step.
 - Whether to formally add the prominence-sweep step into
   `estimate_period_peaks.py` itself (e.g., an automatic sweep-and-
   flag mode) rather than performing it manually per case.
+
+## 10.8. Case Matrix Progress — 30° Slant Angle (60 m/s)
+
+*Same running-log style as Sections 10.5-10.7, not yet integrated into
+the numbered structure above.*
+
+**Case**: `slant30_re4.18M_symtest` (steady mesh built and verified,
+but NEVER RUN with the solver -- see below) and
+`slant30_re4.18M_symtest_transient` (transient PIMPLE).
+
+30° is the angle in this sweep closest to Ahmed's documented
+drag-crisis transition region, making it the case where prior
+assumptions (steady non-convergence, staged mesh coarsening,
+resolveFeatureAngle transfer) are least safe to carry over without
+checking.
+
+### Geometry
+STL verified: 336 triangles, watertight, volume 110.2861 L --
+continuing the monotonic decreasing-volume trend
+(114.44->112.80->111.36->110.77->110.29 L for 0/10/20/25/30deg).
+
+### Feature-angle investigation and resolveFeatureAngle decision
+
+Following the established diagnostic-only sweep methodology, the
+slant-to-rear separation edge was found between includedAngle 119
+and 120 (z=0.177 m -- continuing the trend of decreasing rear-face
+height with slant angle: 0.288->0.24945->0.212->0.177 m for
+0/10/20/30deg). The "~90+slant angle" heuristic again predicted the
+transition closely (predicted 120, actual ~119.5).
+
+**Decision (option C, user choice)**: resolveFeatureAngle was set to
+**120°**, matching 25deg's value. This was independently verified, not
+assumed to transfer: the steady mesh's snappyHexMesh log shows
+curvature/regions: 0 cells marked across all iterations --
+**confirming a specific prediction made in advance**, via the source
+relationship (resolveFeatureAngle ~= 180 - includedAngle): this
+body's slant-to-rear edge sits at a normal-angle difference of
+~60.5deg, well below the 120deg firing threshold, so it was predicted
+not to fire, and it did not. This matches 25deg's finding (zero
+curvature refinement) and gives 25deg and 30deg -- the two closest
+angles in the sweep -- a shared property no other angle pair has.
+
+### Mesh
+
+**Steady case**: level (6,7), resolveFeatureAngle 120,
+**2,149,034 cells** -- the smallest steady mesh in the sweep.
+checkMesh: Mesh OK -- max non-orthogonality **40.0°**, max skewness
+**0.896**, max aspect ratio **4.11**. This is the best-quality steady
+mesh in the sweep after 25deg on every metric. A weak, inconclusive
+pattern is noted: both angles with zero curvature-driven refinement
+(25deg, 30deg) have better mesh quality than the three angles with
+nonzero curvature marking (0/10/20deg), but 30deg does not match
+25deg's numbers closely enough to treat this as more than a loose
+association -- not established as causal.
+
+**Transient case**, staged coarsening:
+
+| Attempt | Level | nCellsBetweenLevels | Cells | Result |
+|---|---|---|---|---|
+| 1 (final) | (5,6) | 3 | 1,121,804 | Mesh OK, 6 shell iterations (clean); curvature/regions confirmed 0 at this level too |
+
+**Level (5,6) was KEPT for the transient mesh (option A, user
+decision)** -- the first case in the sweep not stepped down to (4,5),
+breaking consistency with 0/10/20/25deg. No castellation-oscillation
+test at (4,5) was performed for this angle, since the coarsening step
+was not taken. Final mesh quality: max aspect ratio **3.556** (best in
+the sweep for any transient mesh), max non-orthogonality 40.0°
+(identical to the steady mesh), max skewness 0.910. Domain volume
+check (18.1511, matching the expected 18.1509) confirms correct body
+placement.
+
+### Steady RANS run: skipped entirely (not just shortened)
+
+**User decision**: no solver run of any kind was performed on the
+steady case -- not the full 2000-iteration baseline, not even the
+short ~300-iteration sanity check used at every other angle. This
+goes one step further than 20deg's decision (which skipped only the
+full baseline). The steady mesh stands as a verified checkMesh-OK
+artifact, never exercised with the solver. No sanity-check data exists
+for this angle at any level.
+
+### Transient PIMPLE
+
+deltaT computed from the actual finished mesh: finest cell
+**1.485 mm** (direct extent) -- larger than every (4,5)-level angle's
+finest cell (0/10deg: ~1.003 mm; 20deg: 1.195 mm) despite this being a
+nominally finer (5,6) surface level. Not fully explained; plausibly
+related to the absence of curvature-driven local refinement at this
+angle (also absent at 25deg, whose finest cell was not checked against
+this hypothesis). Initial deltaT = 1.237504e-05 s at U=60 m/s,
+Co=0.5. fvSolution/fvSchemes from 25deg's tight-tolerance
+transient values, per the established approach.
+
+Run in a single continuous stage, 0 -> 0.2 s directly (user
+instruction -- no sanity check preceded it), 8 cores: **130,984 s
+(~36.4 hours)** wall-clock -- the longest single stage in the sweep,
+roughly 1.8x slower than 20deg and 2.5x slower than 10deg despite a
+mesh size (1.12M cells) not proportionally larger. Cause not
+established.
+
+Data integrity: one internal restart occurred at t=0.047s (unlike
+0/10deg's multiple early fragmented restarts, and unlike 20deg's zero
+restarts). The solver log shows no anomaly at the restart point
+(excellent residuals, stable Courant number, no error) -- the cause of
+the restart itself is not established, but it does not appear to be a
+solver-side problem. The two resulting segments (0 to 0.0476s,
+0.047 to 0.2s) overlap by a small window and were truncated and
+spliced (keeping the earlier segment only up to t<0.047s), the same
+method already validated for 10deg's more complex multi-segment case.
+One known-class startup outlier (Cd~352 at t~1.3e-05s) was identified
+and excluded. Full record otherwise clean: 0 NaN, 0 duplicate
+timestamps, genuinely monotonic after stitching.
+
+### Frequency/period result: multi-scale fluctuation, no plateau found
+### -- a new, distinct kind of inconclusive result
+
+The coarse trend (t=0.06-0.2s window, chosen after the full 0-0.2s
+record showed sharp early decay in the first ~0.03-0.04s) showed a
+comparatively flat plateau with only modest wiggles -- visually the
+most stable-looking coarse trend of any angle since 25deg. A windowed
+sub-window-spread check gave 6.94% (tighter than 10deg's 9.5% over an
+equivalent check, but well short of 25deg's reported cleanliness), with
+a non-monotonic (rise-fall-partial-recovery) pattern across the 5
+sub-windows -- real structure, not simple noise.
+
+A prominence sweep across the peak-detection tool (0.0007 to 0.012,
+learning directly from 20deg's methodological lesson) found **no
+stable plateau at any tested value** -- peak count declined
+continuously and smoothly from 11 down to 2 across the range, never
+holding steady. Direct visual inspection of the signal (t=0.06-0.2s)
+confirmed why: the Cd trace shows genuine structure at multiple
+amplitude scales simultaneously -- a small secondary bump (~t=0.083),
+a sharp large excursion (~t=0.093), a complex multi-wiggle trough
+region (t=0.12-0.15) containing several small features that never
+clear any tested threshold, and further peaks toward the end of the
+window. **This is a fourth, distinct kind of inconclusive result in
+the sweep**: 0deg showed monotonic decay with noise; 10deg showed
+clean discrete burst-and-quiet amplitude modulation; 20deg showed
+intermittent large-amplitude bursts against small background
+fluctuation; **30deg shows continuous multi-scale fluctuation with no
+clean amplitude separation between "noise" and "signal" at all.**
+
+**No Strouhal number is reported for 30deg.** Given the signal's
+demonstrated lack of a single characteristic amplitude scale, no
+single-threshold peak count or period estimate is defensible. This
+qualitative difference in wake character, occurring at the angle
+closest to the drag-crisis region, is noted as a plausible (but
+unconfirmed) genuine physical signature -- not established as such,
+since the same result could in principle arise from numerical
+sensitivity at this mesh/level combination, which has not been
+independently tested against a (4,5)-level rerun.
+
+Cd/Cl statistics over t=0.06-0.2s (n=16,188; caveated as spanning a
+non-simple, multi-scale fluctuating signal, not a settled window): Cd
+mean 0.1629, std 0.0057; Cl mean 0.7615, std 0.0067.
+
+### Flow-field visualization
+
+An 8-frame sequence was rendered at the 6 detected peak times plus 2
+additional points sampling the small secondary bump and the deep
+multi-wiggle trough region (t = 0.071, 0.083, 0.093, 0.108, 0.132,
+0.148, 0.165, 0.194 s), same y=0.10 m slice and wake-restricted
+pressure color scale as 10deg/20deg.
+
+**Observation, the most notable finding of this case**: unlike 10deg
+and especially 20deg, **the wake pressure and velocity fields are
+nearly frame-invariant across this entire sequence.** The pressure
+lobe's shape, size, and position are visually almost identical in all
+8 frames, with only subtle shifts in a small internal bright spot;
+velocity contours are even more consistent, with the shear layer and
+recirculation-eye position essentially unchanged throughout.
+Wake-region numeric statistics confirm this: p mean 9.4-12.6, std
+80-90; Ux mean 55.3-55.6 across all 8 frames -- the tightest
+frame-to-frame numeric spread of any angle visualized in this sweep.
+
+**This directly contradicts the expectation set by the frequency
+analysis.** Given the demonstrated multi-scale force-signal
+fluctuation, a correspondingly visible change in wake structure was
+expected (as partially seen at 20deg); instead, the single y=0.10m
+slice shows almost no visible response. Two explanations are
+possible and NOT distinguished by this data: (1) the force
+fluctuation's physical origin lies outside what this single 2D slice
+can capture (a 3D, spanwise, or differently-located phenomenon), or
+(2) the fluctuation is real but subtle at the flow-field level despite
+being significant in the integrated force coefficient. This is
+reported as an open, genuine finding, not resolved one way or the
+other.
+
+**Separate observation**: whole-slice pressure minimum reaches
+approximately -4,500 to -4,600 at this slice (front-nose region,
+excluded from the wake-restricted analysis) -- substantially more
+extreme than 10deg/20deg's approximately -2,760 to -2,810. This
+suggests the front-nose pressure singularity may intensify with
+increasing slant angle, though this is based on only three data
+points (10, 20, 30deg) and has not been checked against 0deg or 25deg.
+
+![30deg sequence, pressure](results/slant30_re4.18M_transient/sequence/30deg_sequence_p_t0.093.png)
+![30deg sequence, velocity](results/slant30_re4.18M_transient/sequence/30deg_sequence_Ux_t0.093.png)
+
+### Decisions still open for 35°
+- Whether to run a (4,5)-level rerun of 30deg as a mesh-sensitivity
+  check, given the case was never tested at that level and the
+  multi-scale frequency finding's numerical-vs-physical origin is
+  unresolved.
+- Whether the near-frame-invariant flow field despite an irregular
+  force signal is specific to this slice location (y=0.10m) or would
+  also appear at a different y-slice or spanwise-averaged view --
+  not investigated.
+- The front-nose pressure-extremity trend with slant angle (10:
+  -2760 -> 20: -2810 -> 30: -4500ish) is noted but not confirmed
+  against 0deg/25deg.
+- Whether 35deg, being further past the drag-crisis region than 30deg,
+  should default to a full steady baseline (option C from 30deg's
+  computational plan) to actually test Decision 9's premise, given
+  that every angle skipping this check so far has not produced
+  a clear answer to "does this regime actually behave differently."
 
 ## 11. References
 - Ahmed, S.R., Ramm, G., Faltin, G. (1984). *Some Salient Features of
