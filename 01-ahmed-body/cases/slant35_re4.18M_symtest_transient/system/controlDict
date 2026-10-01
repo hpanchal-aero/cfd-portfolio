@@ -1,0 +1,70 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// 35deg TRANSIENT (PIMPLE), level (4 5) mesh (matches 0/10/20/25deg;
+// 30deg was kept at (5 6)). nCellsBetweenLevels 3 converged cleanly
+// here (6 shell iterations, no oscillation; second clean (4 5) case
+// after 25deg). resolveFeatureAngle 120, 0 cells curvature-marked
+// (matches 25/30deg). deltaT from scripts/compute_transient_deltat.py
+// on THIS mesh (dx 3.215 mm, U 60 m/s, Co 0.5) -- 2.7-3.2x larger
+// than 10/20deg's (4 5) meshes (finest ~1.0-1.2 mm), hypothesised (not
+// confirmed) to reflect the absence of curvature-driven refinement.
+// Stage 1: 0 -> 0.2 s (user decision A, matching 20/30deg). Stage 2:
+// restart from latestTime (0.2) to endTime 0.3 (user decision B, made
+// after the 0.2 s analysis showed the near-stationary window too
+// short). No steady solver run was performed for this case.
+// purgeWrite 2 with wake probe + y=0.10m slice (unaffected by
+// purgeWrite) to preserve wake-evolution data, same fix as 10/20/30deg.
+application     foamRun;
+solver          incompressibleFluid;
+startFrom       latestTime;
+startTime       0;
+stopAt          endTime;
+endTime         0.3;
+deltaT          2.679167e-05;
+adjustTimeStep  yes;
+maxCo           0.5;
+writeControl    adjustableRunTime;
+writeInterval   0.001;
+purgeWrite      2;
+writeFormat     ascii;
+writePrecision  6;
+writeCompression off;
+timeFormat      general;
+timePrecision   6;
+runTimeModifiable true;
+
+functions
+{
+    #include "forceCoeffs"
+
+    wakeProbes
+    {
+        #include "wakeProbes"
+        writeControl    timeStep;
+        writeInterval   10;
+    }
+
+    cutPlaneSurface
+    {
+        point       (0 0.10 0);
+        normal      (0 1 0);
+        fields      (U p);
+        interpolate true;
+        #includeEtc "caseDicts/postProcessing/surface/cutPlaneSurface.cfg"
+    }
+}
+
+// ************************************************************************* //

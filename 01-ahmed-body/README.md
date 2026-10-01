@@ -27,8 +27,17 @@ to (4,5); its frequency result is a fourth distinct kind of
 inconclusive outcome (continuous multi-scale fluctuation with no
 stable amplitude threshold), and its flow visualization shows a
 wake field that is nearly frame-invariant despite the irregular
-force signal — see Section 10.8. Remaining angle (35°) still
-pending.
+force signal — see Section 10.8. The 35° case — the last angle
+in the sweep — followed 30°'s approach (steady solver run
+skipped) but kept the (4,5) transient mesh, and its run was
+extended from 0.2 s to 0.3 s after the 0.2 s analysis showed the
+near-stationary window was too short. It is the first angle whose
+force record reaches a window with drift smaller than its
+fluctuation (Cd 0.1589 over t = 0.14-0.30 s), and its frequency
+analysis narrowly fails a pre-stated corroboration criterion, so no
+Strouhal number is reported — see Section 10.9. Remaining planned
+work for this project: the 25°/40 m/s validation case and a final
+limitations pass.
 
 ---
 
@@ -1348,6 +1357,343 @@ points (10, 20, 30deg) and has not been checked against 0deg or 25deg.
   computational plan) to actually test Decision 9's premise, given
   that every angle skipping this check so far has not produced
   a clear answer to "does this regime actually behave differently."
+
+## 10.9. Case Matrix Progress — 35° Slant Angle (60 m/s)
+
+*Same running-log style as Sections 10.5-10.8, not yet integrated into
+the numbered structure above.*
+
+**Case**: `slant35_re4.18M_symtest` (steady mesh built and verified, but
+NEVER RUN with the solver) and `slant35_re4.18M_symtest_transient`
+(transient PIMPLE, two stages: 0 -> 0.2 s, then 0.2 -> 0.3 s).
+
+35° is the largest slant angle in the sweep. It follows 30° in
+approach (no steady solver run, option A) but differs in two ways:
+the transient mesh was stepped down to level (4,5) (user decision,
+against the recommendation to match 30°'s (5,6)), and the run was
+extended from 0.2 s to 0.3 s after the 0.2 s analysis showed the
+near-stationary part of the record was too short.
+
+### Geometry
+STL verified: 336 triangles, watertight (0 open edges), bounds
+x in [0, 1.044], y in [-0.1945, 0.1945], z in [0, 0.288] m, volume
+**109.9330 L** -- completing the monotonic six-angle sequence
+(114.44 -> 112.80 -> 111.36 -> 110.77 -> 110.29 -> 109.93 L for
+0/10/20/25/30/35°).
+
+### Feature-angle investigation and resolveFeatureAngle decision
+
+The diagnostic includedAngle sweep was run in a scratch case outside
+the repository. **A methodological error was found and corrected
+during this sweep.** The first detector counted eMesh points near the
+predicted slant-to-rear edge height (x = 1.044, z ~ 0.1607 m) and
+reported the edge present at every angle from 115 to 130. Those
+points were in fact the top endpoints of the vertical rear-face side
+edges, which are selected at any includedAngle above ~90°. The
+detector was replaced by a connectivity-based one (an eMesh edge whose
+two endpoints lie on opposite sides of the symmetry plane at
+x = 1.044, z ~ 0.1607). With it, the slant-to-rear edge first appears
+between includedAngle **124 and 125** (at 124 the edge count is one
+below the point count, at 125 it equals it, i.e. the rear-face outline
+closes). The "~90+slant angle" heuristic predicted 125, so it holds at
+35° to within 1°. The corresponding normal-angle difference is
+~55-56° (180 - 124.5).
+
+**Not rechecked**: the 10°/20°/30° sweeps were done earlier and have
+NOT been re-verified with the connectivity-based detector. If any of
+them used a point-count criterion like the discarded one, their quoted
+transition values could be affected. The z-heights of the edge
+(0.288 -> 0.24945 -> 0.212 -> 0.177 -> 0.1607 m) follow directly from
+the geometry and are not in question.
+
+**Decision (option C, user choice)**: resolveFeatureAngle **120°**,
+matching 25° and 30°. A prediction was made before building: 0 cells
+marked, since ~55-56° is far below 120°. **Confirmed**:
+curvature/regions marked 0 cells in all 9 passes of the steady build
+and in all 7 passes of the transient build. This is the second time
+the 180 - includedAngle relationship was used to predict the mesh
+log in advance and held.
+
+### Mesh
+
+**Steady case**: level (6,7), resolveFeatureAngle 120,
+**2,141,344 cells** (smallest steady mesh in the sweep; built in 264 s).
+checkMesh: Mesh OK -- max non-orthogonality **40.0041°**, max skewness
+**0.896019**, max aspect ratio **4.10996**. These maxima are
+essentially identical to 30°'s (40.0°, 0.896, 4.11) despite ~8,000
+fewer cells and a different geometry. Where the worst cells sit was
+not investigated; a plausible (untested) reading is that they lie in a
+region the slant angle does not affect.
+
+**Transient case**:
+
+| Attempt | Level | nCellsBetweenLevels | Cells | Result |
+|---|---|---|---|---|
+| 1 (final) | (4,5) | 3 | 844,113 | Mesh OK; 6 shell iterations, converged cleanly; curvature/regions 0 |
+
+**Level (4,5) was chosen (user decision B)** for comparability with
+0/10/20/25°. The castellation oscillation seen at 0/10/20° with
+nCellsBetweenLevels 3 (about 70 iterations, ~21-29 cells selected per
+pass, never converging) did **not** recur: the shell loop went
+158,579 -> 242,355 -> 792,016 -> 876,961 -> 877,087 cells and
+iteration 5 selected 0 cells; the final snapped mesh has 844,113
+cells (73 s build). So no nCellsBetweenLevels 2 fix was needed. Only
+25° and 35° have been clean at this setting at (4,5); no cause is
+established and two cases do not make a pattern.
+Final mesh quality: max aspect ratio **3.45921**, max
+non-orthogonality **39.3308°** (average 4.60324), max skewness
+**0.868806** -- the best of any transient mesh in the sweep on all
+three metrics.
+
+### Steady RANS run: skipped entirely (option A, same as 30°)
+
+No solver run of any kind was performed on the steady case. The
+steady mesh stands as a checkMesh-OK artifact never exercised with the
+solver. This leaves unanswered whether the steady-non-convergence
+premise holds for angles past the drag-crisis region (see the
+limitations carried forward below).
+
+### Transient PIMPLE
+
+deltaT computed from the finished mesh: finest cell **3.215 mm**
+(direct extent; minimum cell volume 5.646157e-08 m^3, cube-root
+3.836 mm), initial deltaT = **2.679167e-05 s** at U = 60 m/s, Co = 0.5.
+This is 2.7-3.2x larger than at 10° (1.003 mm) and 20° (1.195 mm) at
+the same (4,5) level and a similar cell count (844k vs ~848-850k).
+It is consistent with doubling 30°'s (5,6) value (2 x 1.485 mm =
+2.97 mm) when stepping down one level. Hypothesis, not tested: the
+~1 mm cells at 0/10/20° came from curvature-driven refinement
+(nonzero marking at those angles; zero at 25/30/35°). **Consequence**:
+at similar cell counts, 35° has coarser local resolution near the body
+and a ~3x coarser time step than 0/10/20°, which limits how directly
+those angles can be compared. 25°'s finest cell was not checked.
+fvSolution/fvSchemes are 30°'s (25°'s tight-tolerance transient
+values); the controlDict differs from 30°'s only in deltaT (and, after
+stage 2, endTime). purgeWrite 2 with the wake probe and y = 0.10 m
+cutPlaneSurface function objects, as at 10/20/30°.
+
+**Stage 1 (0 -> 0.2 s)**: launched 2026-09-30 10:02:53, 8 cores,
+11,107 steps, **24,564 s (~6.8 h)** wall-clock, finished cleanly (no
+errors; final Courant max 0.493, final deltaT 1.81818e-05, last-step
+initial residuals ~1e-5 to 1e-3, continuity errors ~1e-12 or lower).
+Much faster than 30° (36.4 h) and 20° (19.8 h); cause not
+established (the larger deltaT is a candidate, untested). One
+forceCoeffs segment, no restarts.
+
+**Stage 2 (0.2 -> 0.3 s)**: added by user decision after the stage-1
+analysis (see below). Restart from latestTime with endTime 0.3;
+deltaT carried over from the time directory (first step t = 0.200018,
+after one step of 1.81818e-05). Launched 2026-10-01 02:06:34,
+5,458 steps, **11,635 s (~3.2 h)**, finished cleanly (final Courant
+max 0.492, final deltaT 1.85185e-05). Seam checks: the two t = 0.2
+rows in the two forceCoeffs segments are identical in every column
+(max abs difference 0), so the restart reproduced the stage-1 end
+state exactly; the wake-probe seam is clean (0.199873 -> 0.2 ->
+0.200055, no overlap or gap; probes are sampled at time-step indices
+that are multiples of 10).
+
+**Data integrity**: stitched record = segment 0 (t < 0.2, startup
+outlier removed) + segment 0.2 in full: 16,565 rows, t = 0 to 0.3,
+strictly monotonic, 0 duplicates, 0 NaN. The startup outlier at
+t = 2.63158e-05 s (Cd 174.2, Cl 20.6, Cm -28.7) was excluded from
+analysis (raw data untouched); the next row (t = 3.7e-05, Cd 0.469) is
+still startup transient and lies outside every analysis window.
+
+### Stationarity and Cd/Cl statistics
+
+Block statistics show the startup transient ends at ~0.04 s (block Cd
+std drops from ~0.007 to ~0.002). On the 0-0.2 s record alone, **no
+window was stationary**: drift over window / std = 2.15 (start 0.06),
+2.16 (0.08), 1.69 (0.10), 1.78 (0.12), 1.10 (0.14). The slice
+statistics (below) flattened only from ~0.147 s, leaving ~0.05-0.07 s
+of near-stationary data and 3 robust force peaks (2 intervals). That
+is why the run was extended to 0.3 s (user decision).
+
+On the full 0-0.3 s record, drift/std by window start (all ending at
+0.30): 2.01 (0.06), 1.36 (0.10), **0.43 (0.14), 0.50 (0.18),
+0.47 (0.20), 0.02 (0.22)**. Windows starting at 0.14 or later have
+drift smaller than their own fluctuation, for the first time in this
+case. Fluctuation amplitude stays intermittent in stage 2 (block
+std 0.00082-0.00351, a 4.3x range). Primary window **0.14-0.30**
+(chosen on two independent grounds: slice statistics flat from ~0.147
+and drift/std < 1), sensitivity windows 0.18-0.30 and 0.10-0.30.
+
+| Window | n | Cd mean | Cd std | Cl mean | Cl std |
+|---|---|---|---|---|---|
+| 0.14-0.30 (primary) | 8,725 | **0.15890** | 0.00300 | **0.71462** | 0.00255 |
+| 0.18-0.30 | 6,557 | 0.15851 | 0.00278 | 0.71461 | 0.00243 |
+
+Across window starts 0.14-0.22 the Cd mean varies by 0.0004 (0.25%)
+and the Cl mean by 0.0003. Sub-window spread (same definition as
+`analyze_steady_cd.py`: max - min of sub-window means as a percentage
+of the overall mean): 1.69% over 0.14-0.30 with 5 equal-count
+sub-windows (means 0.16063, 0.15817, 0.15833, 0.15795, 0.15944; the
+first is still slightly high, i.e. residual relaxation to ~0.17 s),
+1.45% with 4 equal-time sub-windows, and 1.15% over 0.18-0.30. On the
+30° window (0.06-0.20, 5 sub-windows) 35° gives 4.21% against 30°'s
+6.94%, with means falling monotonically (0.16485 -> 0.15802), i.e.
+relaxation. These spreads are variability of the mean between chunks
+of the record, **not confidence intervals** (the samples are
+autocorrelated and no effective sample size was estimated). Cd means
+should not be compared across angles without the caveats of differing
+window, stationarity and mesh level; a consolidated comparison belongs
+in the final limitations pass.
+
+### Frequency/period result: criterion not met, no Strouhal number
+
+Pre-stated criteria (fixed before the 0-0.3 s peak analysis): a
+plateau in the prominence sweep counts only if the peak count is
+unchanged across >= 3 consecutive sweep values spanning >= 2x; a
+Strouhal number is reported only if the plateau also survives the
+sensitivity windows and an independent signal (the wake probe)
+corroborates it, defined as Cd and at least one probe signal each
+having a top-3 Lomb-Scargle peak at >= 5x the 10-100 Hz band-median
+power within +-10% of the same frequency, in both windows.
+
+*0-0.2 s record (stage 1)*: a 5-peak plateau (t = 0.0912, 0.1165,
+0.1470, 0.1709, 0.1914 s) over prominence 0.003-0.008 (2.7x), with
+irregular intervals (25.3, 30.4, 23.9, 20.5 ms; CoV 14%; would be
+St 0.192) from only 4 intervals. The wake probe did not corroborate
+it (irregular spacing, CoV 24-59%, no stable counts). Inconclusive.
+
+*0-0.3 s record, window 0.14-0.30*: prominence sweep 0.0003-0.012
+(40x) gave 12, 12, 10, 10, 9, 9, 9, 8, 7, 6, 4, 2, 1 peaks. The
+plateau criterion is met only at its minimum: 9 peaks at prominence
+0.0015-0.003 (exactly 2.0x; true width between 2x and 4x), then a
+continuous decline. The 9 peaks (t = 0.1470, 0.1709, 0.1914, 0.2036,
+0.2230, 0.2379, 0.2572, 0.2704, 0.2904 s) are window-stable (at
+prominence 0.002, window 0.18-0.30 returns exactly the 7 of them
+inside it; window 0.10-0.30 returns them plus 0.1165). Mean interval
+17.9 ms (CoV 21%; would be St 0.268 if all peaks are counted), but
+the intervals alternate short and long from ~0.19 s (12.2, 19.4, 14.9,
+19.3, 13.2, 20.0 ms).
+
+*Lomb-Scargle spectra (valid for non-uniform steps; the FFT in
+`analyze_steady_cd.py` is not, see Section 10.6, and remains
+unpatched)*, 0.16 s window => ~6 Hz resolution; "x" = power / band
+median, a rough indicator and not a significance test:
+
+| Component | Window 0.18-0.30 | Window 0.14-0.30 | Criterion |
+|---|---|---|---|
+| ~60 Hz (St ~0.29) | Cd 60.5 Hz #1 x13.1; p-probe 60.0 #1 x12.2; Uz 59.5 #2 x12.6; Ux 59.5 #3 x5.9 | Cd 60.0 Hz #1 **x4.7**; p-probe 57.0 #2 x6.5; Uz 57.0 #2 x5.6; Ux 57.5 #3 x4.5 | **Not met**: Cd x4.7 < 5 in the longer window (frequency agrees within 5%) |
+| ~90 Hz (St ~0.43) | Cd 90.5 #2 x5.3; p-probe 91.0 only #4 x2.7 | Cd 91.0 #2 x4.1; p-probe 90.5 only #4 x3.5 | Not met |
+| ~30 Hz (St ~0.15) | Cd 29.0 #3 x4.4 | not in Cd top 4 | Not met |
+
+**Result: the pre-stated corroboration criterion is not met (a narrow
+miss at ~60 Hz), so no Strouhal number is reported for 35°.** The
+threshold was not relaxed after seeing the data.
+
+Observations made after seeing the data, therefore **hypotheses, not
+results**: (1) The peaks that survive the highest thresholds
+(0.1914, 0.2230, 0.2572, 0.2904 s) are spaced 31.6, 34.2, 33.2 ms
+(CoV 3.2%, St 0.1455) with a smaller peak between each pair, which
+would fit a ~30 Hz cycle with a strong second harmonic (60 Hz) and a
+weaker third (~91 Hz); Ux and Uy probes show strong ~33 Hz peaks
+(x13 and x9 in the shorter window), but Cd does not. With ~6 Hz
+resolution, three peaks near multiples of 30 Hz can align by chance.
+(2) The pressure-probe peaks (8 peaks at 0.5-1.0 x std, mean spacing
+17.6 ms, CoV 17%) precede the nearest force peaks by 2.3-8.8 ms in
+8 of 8 cases (paired by eye, not computed), which would indicate a
+stable phase relation; it was not quantified. (3) An unexplained
+~21-23 Hz component (St ~0.10-0.11) is the strongest line in the
+probe velocities (Ux x85-88, Uz x28-41, Uy x8-19) and appears in Cl
+(22.0 and 20.5 Hz); a 0.16 s window holds only ~3.5 cycles of it, and
+slow relaxation not removed by the linear detrend could leak into it.
+Candidate frequencies are listed here as candidates; none is
+reported as this case's shedding frequency.
+
+### Flow-field visualization
+
+A 16-frame sequence (t = 0.091, 0.102, 0.117, 0.131, 0.147, 0.155,
+0.171, 0.191, 0.204, 0.215, 0.223, 0.238, 0.257, 0.27, 0.275, 0.29 s;
+force-peak times, a weak peak, and quiet-block times) was rendered at
+the y = 0.10 m slice with **one shared scale for all 16 frames**:
+wake-restricted pressure (-293.73, 175.47) and Ux (-30, 90). Files:
+`results/slant35_re4.18M_transient/all_frames/`.
+
+*Relaxation phase (0.091-~0.147 s)*: frame-to-frame differences are
+dominated by a monotonic relaxation, not by isolated events. RMS
+deviation of the wake field from the 8-frame mean (first eight
+frames): pressure 18.40, 12.34, 10.06, 11.95, 10.21, 10.62, 6.82,
+7.16; Ux largest at t = 0.091 (1.252, against 0.58-0.86 for the
+rest). The near-ground minimum Ux (lowest slice row, z = 0.010 m;
+wall-function dependent, usable as a trend only) goes from
+-25.22 m/s at x = 1.148 (t = 0.091) to about -15 m/s at x ~ 1.25
+(t = 0.171-0.191); wake-mean Ux falls from 56.13 to 55.80 and is flat
+from ~0.147.
+
+*Stationary window (0.204-0.29 s, 8 frames)*: two predictions were
+stated before the check and both held: pressure RMS deviation
+5.18-6.61 (predicted ~5-12), Ux RMS deviation 0.440-0.627 (predicted
+0.4-1.0), max/min ratio 1.28 (pressure) and 1.42 (Ux) (predicted
+< 2), no monotonic time trend. **The slice is nearly frame-invariant
+once the flow has relaxed** (deviations ~8-10% of the wake pressure
+spread, ~4-5% of the Ux spread), as at 30°. Wake-mean Ux 55.72-55.81,
+std 12.21-12.35. The near-ground minimum Ux nevertheless varies from
+-16.1 to -21.1 m/s at x = 1.20-1.24 (a stable location, quantized to
+mesh nodes). Post-hoc and unconfirmed: the minimum is most negative
+at the three large force-peak frames (-18.7, -20.5, -21.1; mean
+-20.10), intermediate at three small-peak frames (mean -18.23) and
+weakest at two quiet frames (mean -16.59); n = 3, 3, 2 on a single
+near-wall point.
+
+*Correction of a visual reading*: on first inspection embedded
+low-pressure features seemed to appear only at t = 0.102 and 0.155,
+the two weakest force peaks. The RMS-deviation test did not support
+this (0.155: 10.62, mid-pack; 0.102: 12.34 against 11.95 at the quiet
+frame 0.131). It is recorded as a visual observation not
+quantitatively confirmed; whole-wake RMS could miss a small localized
+feature, so absence in this metric is not proof of absence.
+
+**The 30° question remains open at 35°**: a single 2D slice shows very
+little of the force fluctuation (Cd std 0.0025-0.003, ~1.6-1.9% of the
+mean). Whether the fluctuation lives outside this slice (3D or
+spanwise) or is subtle at field level was not distinguished.
+
+Separate observation: whole-slice pressure minimum (front-nose region)
+is about -3,757 to -3,913 in the frames inspected, **less extreme than
+30°'s ~-4,500 to -4,600** and more extreme than 10°/20°'s
+~-2,760 to -2,810. The nose-pressure intensification with slant angle
+suggested at 30° therefore does not continue; 0° and 25° were never
+checked, so no monotonic trend can be claimed.
+
+![35deg, pressure, relaxation phase](results/slant35_re4.18M_transient/all_frames/35deg_p_t0.091.png)
+![35deg, velocity, relaxation phase](results/slant35_re4.18M_transient/all_frames/35deg_Ux_t0.091.png)
+![35deg, pressure, stationary window](results/slant35_re4.18M_transient/all_frames/35deg_p_t0.29.png)
+![35deg, velocity, stationary window](results/slant35_re4.18M_transient/all_frames/35deg_Ux_t0.29.png)
+
+### Resolution of the open items listed at the end of Section 10.8
+- 30° (4,5) mesh-sensitivity rerun: not performed (outside the locked
+  scope). 35° at (4,5) does not substitute for it (different angle).
+- Whether the frame-invariant wake is specific to the y = 0.10 m
+  slice: still not investigated.
+- Nose-pressure trend with slant angle: 35° does not continue it (see
+  above); 0° and 25° unchecked.
+- Full steady baseline for 35°: not run (option A). The question
+  whether steady non-convergence holds past the drag-crisis region is
+  unanswered. The transient record reaching a near-stationary state
+  only after ~0.14 s does not test steady-solver behaviour.
+
+### Reproducibility notes for this case
+The 35° stationarity, seam, Lomb-Scargle/probe and frame RMS-deviation
+analyses were run as inline Python and are **not yet saved under
+`scripts/`**. Stitched records were built in `/tmp` (not in the
+repository). Existing scripts reused: `compute_transient_deltat.py`,
+`inspect_early_transient.py`, `estimate_period_peaks.py` (run from a
+cleaned scratch copy of the force record), `visualize_burst_sequence.py`
+(unmodified).
+
+### Limitations specific to 35° (to be consolidated in the final pass)
+- No steady solver run; no steady baseline.
+- Transient mesh level (4,5) differs from 30° (5,6); finest cell and
+  deltaT differ ~2.7-3.2x from the 0/10/20° (4,5) meshes.
+- Cd non-stationary before ~0.17 s; reported mean is over 0.14-0.30
+  with the stated spread, not a confidence interval.
+- No Strouhal number; criterion narrowly missed; post-hoc observations
+  untested.
+- Single y = 0.10 m slice and single wake probe.
+- Feature-angle sweeps for 10/20/30° not re-verified with the
+  corrected detector.
 
 ## 11. References
 - Ahmed, S.R., Ramm, G., Faltin, G. (1984). *Some Salient Features of
