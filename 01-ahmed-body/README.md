@@ -1,6 +1,8 @@
 # Project 01 — Ahmed Body: 25° Slant, External Aerodynamics
 
 ## Status
+**ERRATA (2026-10-02): the force coefficients reported in this README are half-body values (multiply by 2) and the 50 mm ground clearance is not modelled. See the Errata section immediately below this block.**
+
 **Case frozen at commit `72af160`.** The 25° slant / 60 m/s condition is
 complete: mesh validated, steady and transient CFD results obtained,
 wake dynamics cross-validated against an independent probe measurement.
@@ -38,6 +40,89 @@ analysis narrowly fails a pre-stated corroboration criterion, so no
 Strouhal number is reported — see Section 10.9. Remaining planned
 work for this project: the 25°/40 m/s validation case and a final
 limitations pass.
+
+## Errata (added 2026-10-02; supersedes earlier statements where they conflict)
+
+*Added after the 35° case was published (commit `97a9ffb`), following an
+audit of the case setups. Earlier sections are left as written, in line
+with this repository's rule of correcting forward rather than rewriting
+history. Where an earlier section conflicts with this one, this one
+takes precedence.*
+
+### E1. All reported Cd, Cl and Cm are half-body values
+
+The domain is a half-domain (symmetry plane at y = 0), so the
+`ahmedBody` patch is the half body. The `forceCoeffs` definition in
+every case integrates the force over that patch but normalizes it with
+Aref = 0.112032 m^2, the **full** frontal area (0.389 x 0.288), and has
+no symmetry factor. Measured on the 35° steady mesh: the patch spans
+y = 0 to 0.1945 m and its projected frontal area is 0.056018 m^2, i.e.
+0.5000 x 0.112032 (faces looking upstream and downstream give the same
+area, so the patch is a closed surface). All twelve case directories that
+define one (steady and transient, 0° to 35°) use the same `forceCoeffs`
+definition, and they share the same half-domain setup, so the
+same factor is expected everywhere, **but the area was measured on the
+35° mesh only**. Assuming a symmetric mean flow, every reported Cd, Cl
+and Cm is half the full-body value; the correction is a factor of 2.
+
+| Case / window (as reported in this README) | Reported | Multiplied by 2 |
+|---|---|---|
+| 0° steady, Cd, iterations 1200-2000 | 0.151413 | 0.302826 |
+| 25° steady, Cd, iterations 1000-2000 | 0.152808 (std 0.001670) | 0.305616 (std 0.003340) |
+| 10° transient, Cd | 0.1433 (std 0.0044) | 0.2866 (std 0.0088) |
+| 10° transient, Cl | 0.5986 (std 0.0032) | 1.1972 (std 0.0064) |
+| 20° | no mean Cd or Cl value reported | - |
+| 30° transient (0.06-0.2 s), Cd | 0.1629 (std 0.0057) | 0.3258 (std 0.0114) |
+| 30° transient (0.06-0.2 s), Cl | 0.7615 (std 0.0067) | 1.5230 (std 0.0134) |
+| 35° (0.14-0.30 s), Cd | 0.15890 (std 0.00300) | 0.31780 (std 0.00600) |
+| 35° (0.14-0.30 s), Cl | 0.71462 (std 0.00255) | 1.42924 (std 0.00510) |
+
+Other Cd, Cl and Cm values quoted elsewhere in this README (window
+sensitivity values, sub-window means, per-frame figures) scale by the
+same factor. **Not affected**: flow fields, pressure and velocity
+statistics, frequencies and Strouhal-number analyses, mesh quality,
+percentage-type statistics (sub-window spreads, drift/std ratios) and
+the qualitative conclusions about wake behaviour.
+
+### E2. The body sits on the ground plane: the 50 mm ground clearance is not modelled
+
+Section 1 lists a 50 mm ground clearance as part of the reference
+configuration. The geometry generator builds the body with its
+underside at z = 0 and states that the clearance is handled in the CFD
+case setup; that step was not carried out. In the cases examined the
+domain floor is at z = 0 and the STL is not translated. Measured on the
+35° mesh: STL z-extent 0 to 0.288 m; `ground` patch at z = 0; body
+patch spanning z = 0 to 0.288 m; downward-facing projected area of the
+body patch 0.0152 m^2 against 0.2009 m^2 facing upward (the half-body
+plan area is about 0.20 m^2). There is no underside and no underbody
+gap. All six STLs share the same z-extent and 12 of the 13 case
+`blockMeshDict` files are identical; the one exception (the early
+`slant25_re4.29M` directory) was not examined. Only the 35° mesh was
+measured directly.
+
+Consequences:
+- The simulated geometry is a body resting on the ground plane, not the
+  Ahmed reference configuration. There is no underbody flow.
+- Absolute coefficients, and lift in particular (the doubled 35° Cl of
+  about 1.4 should not be taken as a result), are not comparable with
+  published Ahmed-body data.
+- Nothing in this repository has yet been validated against experiment.
+  Wording such as "mesh validated" and "wake dynamics cross-validated
+  against an independent probe measurement" in the Status block refers
+  to internal consistency checks (mesh quality; agreement between a
+  force-signal frequency and a wake-probe frequency), not to comparison
+  with experimental data.
+- Trends across slant angle and the observations about wake dynamics
+  describe the geometry that was actually simulated.
+
+### E3. Status of the 25° case and next steps
+
+The 25° case frozen at commit `72af160` has both issues and remains
+unmodified, as the freeze instruction requires; its corrections are
+recorded here. A corrected validation case (25° slant, 50 mm clearance,
+half-body reference area 0.056016 m^2, steady RANS, compared with the
+ERCOFTAC AC1-05 data) is planned but **not started**. Its scope is not
+final, and no result of it is claimed here.
 
 ---
 
