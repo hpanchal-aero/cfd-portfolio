@@ -1,7 +1,7 @@
 # Project 01 — Ahmed Body: 25° Slant, External Aerodynamics
 
 ## Status
-**ERRATA (2026-10-02): the force coefficients reported in this README are half-body values (multiply by 2) and the 50 mm ground clearance is not modelled. See the Errata section immediately below this block.**
+**ERRATA (2026-10-02): the force coefficients reported in this README are half-body values (multiply by 2) and the 50 mm ground clearance is not modelled, and the inlet turbulence of the sweep (5%, assumed) is far higher than in the reference experiments. See the Errata section immediately below this block.**
 
 **Case frozen at commit `72af160`.** The 25° slant / 60 m/s condition is
 complete: mesh validated, steady and transient CFD results obtained,
@@ -123,6 +123,34 @@ recorded here. A corrected validation case (25° slant, 50 mm clearance,
 half-body reference area 0.056016 m^2, steady RANS, compared with the
 ERCOFTAC AC1-05 data) is planned but **not started**. Its scope is not
 final, and no result of it is claimed here.
+
+### E4. Inlet turbulence differs strongly from the reference experiments
+
+All twelve sweep case directories (steady and transient, 0° to 35°) use
+one identical `0/include/initialConditions` file (verified by checksum):
+U = 60 m/s, k = 13.5 m^2/s^2, omega = 91.79 1/s. The file records the
+turbulence intensity as **assumed** to be 5% (k = 1.5 (U I)^2, omega
+from a length scale of 0.07 L). With nu = 1.5e-5 m^2/s this corresponds
+to a free-stream eddy-viscosity ratio nut/nu = k/(omega nu) of about
+9.8e3.
+
+According to the ERCOFTAC AC1-05 test-data documentation, the reference
+experiments report a turbulence intensity below 0.5% (Ahmed et al.
+1984, 60 m/s) and below 0.25% with a viscosity ratio of about 10
+(Lienhart et al., 40 m/s). At the inlet, the sweep's intensity is
+therefore 10 to 20 times higher and its eddy-viscosity ratio about 980
+times higher than in the experiments. (Turbulence decays along the
+2.088 m inlet length, so the values at the body are lower than at the
+inlet; that decay was not measured in these cases.)
+
+This was an assumption recorded in the case files; the README did not
+state it. Its effect on the results has **not been tested**. A high
+free-stream eddy viscosity could damp unsteadiness and smear shear
+layers, which would bear on the wake-dynamics and frequency
+observations, but that is a hypothesis and not a finding. The unsteady
+results of the sweep should be read as results for this inlet
+condition. The planned validation case is intended to use inlet
+turbulence matched to the experiments.
 
 ---
 
