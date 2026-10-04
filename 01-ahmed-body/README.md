@@ -1,7 +1,7 @@
 # Project 01 — Ahmed Body: 25° Slant, External Aerodynamics
 
 ## Status
-**ERRATA (2026-10-02): the force coefficients reported in this README are half-body values (multiply by 2) and the 50 mm ground clearance is not modelled, and the inlet turbulence of the sweep (5%, assumed) is far higher than in the reference experiments. See the Errata section immediately below this block.**
+**ERRATA (2026-10-02): the force coefficients reported in this README are half-body values (multiply by 2) and the 50 mm ground clearance is not modelled in the 0°, 10°, 20°, 30° and 35° cases (the 25° case has it), and the inlet turbulence of the sweep (5%, assumed) is far higher than in the reference experiments. See the Errata section immediately below this block.**
 
 **Case frozen at commit `72af160`.** The 25° slant / 60 m/s condition is
 complete: mesh validated, steady and transient CFD results obtained,
@@ -84,42 +84,63 @@ statistics, frequencies and Strouhal-number analyses, mesh quality,
 percentage-type statistics (sub-window spreads, drift/std ratios) and
 the qualitative conclusions about wake behaviour.
 
-### E2. The body sits on the ground plane: the 50 mm ground clearance is not modelled
+### E2. The body sits on the ground plane in the 0°, 10°, 20°, 30° and 35° cases; the 25° case has the 50 mm ground clearance
+
+*Corrected 2026-10-04. The first version of this item (commit `612e1dd`)
+said that the clearance was missing in every case, including 25°. That
+was wrong: it was inferred from the generator's STL files and from a
+measurement on the 35° mesh, before the 25° case's own STL had been
+opened.*
 
 Section 1 lists a 50 mm ground clearance as part of the reference
 configuration. The geometry generator builds the body with its
 underside at z = 0 and states that the clearance is handled in the CFD
-case setup; that step was not carried out. In the cases examined the
-domain floor is at z = 0 and the STL is not translated. Measured on the
-35° mesh: STL z-extent 0 to 0.288 m; `ground` patch at z = 0; body
-patch spanning z = 0 to 0.288 m; downward-facing projected area of the
-body patch 0.0152 m^2 against 0.2009 m^2 facing upward (the half-body
-plan area is about 0.20 m^2). There is no underside and no underbody
-gap. All six STLs share the same z-extent and 12 of the 13 case
-`blockMeshDict` files are identical; the one exception (the early
-`slant25_re4.29M` directory) was not examined. Only the 35° mesh was
-measured directly.
+case setup. Measured by reading the STL used inside every case
+directory: the three 25° case directories use an STL raised by 50 mm
+(z from 0.050 to 0.338 m), while the STLs in all other case directories
+(0°, 10°, 20°, 30°, 35°) span z = 0 to 0.288 m, i.e. the body rests on
+the floor (domain floor at z = 0, identical `blockMeshDict` in these
+cases; the early `slant25_re4.29M` directory has a different
+`blockMeshDict` and was examined only through its STL).
+
+Checked on the meshes themselves:
+- 25° (frozen mesh): `ground` patch at z = 0; body patch z = 0.050 to
+  0.338 m; projected area in z of 0.20091 m^2 facing up and 0.20091 m^2
+  facing down, i.e. the underside face is present and there is an
+  underbody gap.
+- 35°: `ground` patch at z = 0; body patch z = 0 to 0.288 m;
+  downward-facing projected area 0.0152 m^2 against 0.2009 m^2 facing
+  upward, i.e. no underside face and no underbody gap.
+- 0°, 10°, 20°, 30°: the conclusion rests on the STL files and the
+  common domain definition; their meshes were not measured.
 
 Consequences:
-- The simulated geometry is a body resting on the ground plane, not the
-  Ahmed reference configuration. There is no underbody flow.
-- Absolute coefficients, and lift in particular (the doubled 35° Cl of
+- The sweep is internally inconsistent: the 25° case includes an
+  underbody gap and its flow, the other angles do not. Cd and Cl trends
+  across slant angle (even after the factor-2 correction of E1) mix two
+  geometries and should not be read as a slant-angle effect.
+- For the five angles without clearance, the simulated geometry is a
+  body resting on the ground plane, with no underbody flow. Their
+  absolute coefficients, and lift in particular (the doubled 35° Cl of
   about 1.4 should not be taken as a result), are not comparable with
   published Ahmed-body data.
-- Nothing in this repository has yet been validated against experiment.
-  Wording such as "mesh validated" and "wake dynamics cross-validated
-  against an independent probe measurement" in the Status block refers
-  to internal consistency checks (mesh quality; agreement between a
-  force-signal frequency and a wake-probe frequency), not to comparison
-  with experimental data.
+- The 25° case is closest to the reference configuration, but nothing
+  in this repository has yet been validated against experiment. Wording
+  such as "mesh validated" and "wake dynamics cross-validated against an
+  independent probe measurement" in the Status block refers to internal
+  consistency checks (mesh quality; agreement between a force-signal
+  frequency and a wake-probe frequency), not to comparison with
+  experimental data.
 - Trends across slant angle and the observations about wake dynamics
-  describe the geometry that was actually simulated.
+  describe the geometry that was actually simulated at each angle.
 
 ### E3. Status of the 25° case and next steps
 
-The 25° case frozen at commit `72af160` has both issues and remains
-unmodified, as the freeze instruction requires; its corrections are
-recorded here. A corrected validation case (25° slant, 50 mm clearance,
+The 25° case frozen at commit `72af160` has the half-body
+coefficient issue (E1) and the inlet-turbulence difference (E4) but, unlike
+the other angles, it does have the 50 mm ground clearance (see E2); it
+remains unmodified, as the freeze instruction requires, and its
+corrections are recorded here. A corrected validation case (25° slant, 50 mm clearance,
 half-body reference area 0.056016 m^2, steady RANS, compared with the
 ERCOFTAC AC1-05 data) is planned but **not started**. Its scope is not
 final, and no result of it is claimed here.
