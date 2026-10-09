@@ -1,0 +1,56 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     foamRun;
+
+solver          incompressibleFluid;
+
+startFrom       latestTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+// Extended run: 1000-iteration run reached endTime without triggering
+// residualControl (Ux/Uy/Uz/p/k residuals all still above 1e-4; only
+// omega had converged). Cd was still drifting (0.1546 -> 0.1511 over
+// the final 4 iterations), not yet stable. Extending to 2000 to
+// determine whether the case is still naturally converging or has
+// plateaued. No other settings changed -- single-variable test.
+endTime         2000;
+deltaT          1;
+writeControl    timeStep;
+writeInterval   50;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  6;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable true;
+
+functions
+{
+    #include "forceCoeffs"
+}
+
+// ************************************************************************* //

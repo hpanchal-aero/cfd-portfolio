@@ -1,0 +1,83 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// VALIDATION CASE val25_clr50_40ms_tu05, STAGE 2 (iterations 1000-2000, averaging).
+// Steady SIMPLEC: "time" is the iteration count (deltaT 1).
+// Stage 1 (0-1000) force history: Cd drift/std < 0.5 and 4-window spread
+// < 2 % holds for every window start tested (500, 600, 700, 800, 900).
+// Stage 1 was interrupted at iteration 90 and restarted from 50. Averaging
+// starts at 1000 (no averaging data exist in the 1000 directory), so the mean
+// is an equal-weight average over 1000-2000, as for val25_clr50_40ms.
+// restartOnRestart is no, so an interrupted stage 2 resumes the same average.
+// The same stationarity criterion is re-applied to 1000-2000 afterwards.
+
+application     foamRun;
+
+solver          incompressibleFluid;
+
+startFrom       latestTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         2000;
+
+deltaT          1;
+
+writeControl    timeStep;
+
+writeInterval   50;
+
+// Keep the last three write times (1900, 1950, 2000).
+purgeWrite      3;
+
+writeFormat     ascii;
+
+writePrecision  6;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable true;
+
+functions
+{
+    #include "forceCoeffs"
+
+    yPlus
+    {
+        type            yPlus;
+        libs            ("libfieldFunctionObjects.so");
+        executeControl  writeTime;
+        writeControl    writeTime;
+    }
+
+    fieldAverage1
+    {
+        #includeEtc "caseDicts/postProcessing/fields/fieldAverage.cfg"
+
+        restartOnRestart    no;
+        base                iteration;
+        mean                yes;
+        prime2Mean          yes;
+        fields              (U p k);
+    }
+}
+
+// ************************************************************************* //

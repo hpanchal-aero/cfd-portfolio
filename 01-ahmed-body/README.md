@@ -3,6 +3,8 @@
 ## Status
 **ERRATA (2026-10-02): the force coefficients reported in this README are half-body values (multiply by 2) and the 50 mm ground clearance is not modelled in the 0°, 10°, 20°, 30° and 35° cases (the 25° case has it), and the inlet turbulence of the sweep (5%, assumed) is far higher than in the reference experiments. See the Errata section immediately below this block.**
 
+**Update (2026-10-10):** the corrected 25° validation case (50 mm clearance, half-body reference area, inlet turbulence matched to the experiment) has been run at 40 and 60 m/s and compared with ERCOFTAC AC1-05 Experiment 2: the wake recirculation is reproduced, the slant boundary layer is not, and the drag comparison with Experiment 1 (criterion C1) was **not evaluated**. See Section 10.10. This supersedes the statement further down that the validation case is still planned.
+
 **Case frozen at commit `72af160`.** The 25° slant / 60 m/s condition is
 complete: mesh validated, steady and transient CFD results obtained,
 wake dynamics cross-validated against an independent probe measurement.
@@ -144,6 +146,8 @@ corrections are recorded here. A corrected validation case (25° slant, 50 mm cl
 half-body reference area 0.056016 m^2, steady RANS, compared with the
 ERCOFTAC AC1-05 data) is planned but **not started**. Its scope is not
 final, and no result of it is claimed here.
+
+**Update 2026-10-10:** the corrected validation case was built and run after this section was written, so it is no longer "not started" and its scope is now fixed; the results, including the one criterion that could not be evaluated (C1, drag against Experiment 1), are reported in Section 10.10. The frozen 25° case itself remains unmodified.
 
 ### E4. Inlet turbulence differs strongly from the reference experiments
 
@@ -1828,6 +1832,236 @@ cleaned scratch copy of the force record), `visualize_burst_sequence.py`
 - Single y = 0.10 m slice and single wake probe.
 - Feature-angle sweeps for 10/20/30° not re-verified with the
   corrected detector.
+
+## 10.10. Validation Case — 25° Slant, 50 mm Clearance, Compared with ERCOFTAC AC1-05 (added 2026-10-10)
+
+*This section is the first and only quantitative comparison with experimental
+data in this project. It concerns one new case family (`cases/val25_clr50_*`),
+not the sweep above: the sweep cases remain subject to errata E1–E4.*
+
+### Purpose and scope
+
+The question was whether the corrected setup (25° slant, 50 mm ground
+clearance, half-body reference area 0.056016 m², inlet turbulence matched to
+the experiment) reproduces the measured flow behind and over the slant of the
+Ahmed body. Criteria C1–C5 were fixed before any run (see the table below).
+The comparison data are ERCOFTAC Classic Collection AC1-05, Experiment 2
+(LDA, 40 m/s, symmetry plane y = 0; test data page
+https://kbwiki.ercoftac.org/w/index.php/Test_Data_AC1-05). The raw data are not
+in this repository, and no figure here shows measured points, because the
+ERCOFTAC data terms have not been checked. Only pass/fail outcomes, pooled
+error metrics and qualitative statements are reported.
+
+### Cases
+
+| case | U∞ [m/s] | Re_L | nose Tu, νt/ν (design → sampled in the solution) | inlet k0, ω0 |
+|---|---|---|---|---|
+| `val25_clr50_40ms` (**headline**) | 40 | 2.784e6 | 0.25 %, 10 → 0.253 %, 10.09 | 0.027751, 176.1 |
+| `val25_clr50_60ms` | 60 | 4.176e6 | 0.25 %, 10 → 0.255 %, 10.09 | 0.1051, 639.8 |
+| `val25_clr50_40ms_tu05` (**sensitivity test**) | 40 | 2.784e6 | 0.5 %, 20 → 0.522 %, 20.35 | 0.52657, 1475.3 |
+
+- Geometry: the frozen 25° STL (z = 0.05 … 0.338 m, i.e. 50 mm clearance), half
+  domain with a symmetry plane at y = 0, body frontal area used as Aref = 0.056016 m²
+  (half of 0.112032 m²), so the coefficients below equal full-body coefficients.
+- Mesh: snappyHexMesh, levels (6,7), nCellsBetweenLevels 3, uniform wake box at
+  level 3, 2,725,204 cells; checkMesh passes (max aspect ratio 3.42, max
+  non-orthogonality 32.9°, average 7.85°, max skewness 0.953 — the highest in
+  the project, never located). The mesh is the same for all three cases (the
+  `polyMesh` files are byte-identical).
+- Solver: OpenFOAM 11 `foamRun`/`incompressibleFluid`, steady SIMPLEC, k–ω SST with
+  `nutkWallFunction` at walls, numerical settings copied from the frozen 25° case,
+  8 MPI ranks, 2000 iterations. Mean fields (U, p, k and second moments) are
+  iteration-averaged by `fieldAverage` over iterations 1001–2000.
+- Inlet turbulence: set from the free-stream SST decay relation
+  (β = 0.0828, β* = 0.09) so that the nose has the target Tu and νt/ν; the values in
+  the table were checked by sampling the converged fields near the nose
+  (`scripts/validation/check_nose_turbulence.py`).
+- **tu05 changes two variables at once** (turbulence intensity and viscosity
+  ratio, because a nose Tu of 0.5 % is not reachable at ratio 10 with this decay
+  relation at 40 m/s). Any difference to the baseline therefore cannot be
+  attributed to one of them.
+- Run history (provenance): the baseline stage 1 was stopped at iteration 312 to free
+  CPU cores and continued (313–1000); the tu05 stage 1 was interrupted at iteration 90
+  and resumed from the iteration-50 write (so the log of iterations 1–90 was
+  overwritten; the force history of that segment survives). Stage 2 (1001–2000,
+  with `fieldAverage`) ran without interruption in all cases. Force histories were
+  stitched from the restart segments, later segments winning on overlaps; gaps: none.
+
+### Convergence and stationarity
+
+Pre-stated criterion for the averaging window: drift/std of Cd below 0.5 and 4-window
+spread of the window mean below 2 %. The criterion was calibrated on the baseline's
+own stage-1 history, where it first holds for windows starting at iteration 700.
+
+| case | Cd mean (1000–2000) | Cd std | Cl mean | Cl std | drift/std | 4-window spread |
+|---|---|---|---|---|---|---|
+| 40 m/s | 0.28672 | 0.00308 | 0.32051 | 0.07547 | 0.118 | 0.095 % |
+| 60 m/s | 0.28864 | 0.00295 | 0.31823 | 0.07457 | 0.00 | 0.02 % |
+| 40 m/s, tu05 | 0.29500 | 0.00291 | 0.32633 | 0.07326 | 0.016 | 0.059 % |
+
+All three pass. The residuals do **not** reach the 1e-4 target: in the baseline the
+final U_z residual is of order 2e-2, and the Cl histories oscillate in a limit
+cycle (std ≈ 0.07 in all cases, period not measured; this is an oscillation in the iteration count of the steady solver, not a physical frequency). The means above are means
+over that oscillation, not converged steady values. The residual histories of the
+60 m/s and tu05 cases were not separately examined for this section.
+
+![force history](results/val25_clr50/comparisons/force_history_3cases.png)
+
+### Pre-stated criteria and results
+
+| id | criterion | baseline (0.25 %) | tu05 (0.5 %) |
+|---|---|---|---|
+| C1 | full-body Cd vs Experiment 1 (Ahmed 1984, 60 m/s): ≤10 % agree, 10–20 % partial, >20 % disagree | **not evaluated** | n/a |
+| C2 | no reversed flow above the slant at the measured stations | pass | pass |
+| C3a | reversed flow at the wake stations 38, 88, 138 mm | pass | pass |
+| C3b | recirculation end inside 138–288 mm | pass: ends in (188, 238] mm | pass: same interval |
+| C4 | NRMSE/Ub of U and W over slant + wake points: ≤0.05 good, 0.05–0.10 fair, >0.10 poor | 0.1020, **poor** (n = 562) | 0.0960, **fair** |
+| C5 | upstream floor layer, modelled k: report only | see text | see text |
+
+- **C1 could not be evaluated.** The Experiment 1 drag values are not available on the
+  ERCOFTAC page and the original publication (SAE 840300) has not been obtained.
+  Consequently **no statement is made about the accuracy of the computed Cd**
+  (0.2867 at 40 m/s, 0.2886 at 60 m/s).
+- C4 split: slant only 0.1852 (baseline, poor) and 0.1698 (tu05, poor), n = 112; wake only 0.0667
+  and 0.0659 (both fair), n = 450. The baseline→tu05 change of the pooled value
+  (poor → fair) is a small change of about 0.006 that crosses the 0.10
+  threshold; it carries no uncertainty estimate (no mesh or wall-treatment
+  sensitivity exists), and it should not be read as a validated improvement.
+  The slant-only value is poor in both cases.
+- The headline case remains the pre-registered baseline. tu05 is reported as a
+  sensitivity test and does not replace it.
+- C5 (report only): in the baseline, the modelled turbulence kinetic energy in the
+  upstream floor layer and in the free stream was far below the level implied by
+  the measurement. tu05 raises it to the same order, but the free-stream level stays
+  below the measurement-implied one. The upstream floor-layer velocity error
+  changes little between the cases.
+
+### What agrees and what does not
+
+Agrees: no reversed flow above the slant and a recirculation behind the base whose
+extent falls in the measured interval (C2, C3). Does not agree: the velocity
+profiles over the slant. In the baseline the CFD boundary layer over the slant is
+thinner and much fuller than measured, with the divergence beginning between the
+x = −163 mm and −143 mm stations (x measured from the rear base). tu05 reduces
+the profile error at all ten slant stations, by 4–11 % of the baseline error, but
+the layer stays far too full. The discrepancy therefore is not removed by the
+free-stream turbulence change tested here.
+
+### CFD-only slant-layer diagnostic (iteration-averaged U [m/s] above the slant surface)
+
+| station x [mm] | case | +1 mm | +5 mm | +10 mm | +15 mm | +20 mm | +30 mm |
+|---|---|---|---|---|---|---|---|
+| −143 | baseline | 21.6 | 28.0 | 37.3 | 42.4 | 44.0 | 44.9 |
+| −143 | tu05 | 20.1 | 26.3 | 35.3 | 40.9 | 43.0 | 44.9 |
+| −103 | baseline | 17.6 | 24.3 | 32.0 | 36.7 | 39.5 | 41.6 |
+| −103 | tu05 | 15.8 | 22.2 | 29.7 | 34.7 | 38.1 | 41.2 |
+| −63 | baseline | 15.7 | 21.4 | 28.5 | 34.8 | 37.7 | 40.2 |
+| −63 | tu05 | 13.6 | 18.9 | 25.9 | 32.6 | 36.1 | 39.7 |
+| −23 | baseline | 15.1 | 20.3 | 28.0 | 31.4 | 35.0 | 38.6 |
+| −23 | tu05 | 12.5 | 17.4 | 25.0 | 28.7 | 32.9 | 37.8 |
+| −3 | baseline | 15.6 | 19.1 | 25.0 | 30.8 | 33.8 | 37.8 |
+| −3 | tu05 | 12.6 | 16.0 | 21.8 | 27.8 | 31.4 | 36.8 |
+
+- About 10–11 distinct cells span the first 30 mm above the slant.
+- Slant wall-function y+ (baseline / tu05): min 17.9 / 16.5, median 43.8 / 42.6, max
+  116.5 / 115.9; 73.3 % / 72.7 % of slant faces in the 30–300 band, 26.7 % / 27.3 %
+  below 30, none above 300. About a quarter of the slant wall-adjacent cells
+  therefore sit below the usual wall-function range.
+
+### Drag decomposition (CFD only, pressure drag by region, Cd on Aref = 0.056016 m²)
+
+| region | 40 m/s | 60 m/s | 40 m/s tu05 | 60−40 | tu05−40 |
+|---|---|---|---|---|---|
+| front (x<0.10) | -0.01432 | -0.01171 | -0.01005 | +0.00261 | +0.00427 |
+| mid (0.10..slant) | 0.00041 | 0.00041 | 0.00040 | +0.00000 | -0.00001 |
+| slant | 0.14571 | 0.14456 | 0.14442 | -0.00115 | -0.00129 |
+| base (rear face) | 0.10656 | 0.10672 | 0.10818 | +0.00016 | +0.00162 |
+| other (x>slant) | 0.00142 | 0.00142 | 0.00139 | +0.00000 | -0.00003 |
+| pressure total | 0.23979 | 0.24140 | 0.24434 | +0.00161 | +0.00455 |
+| friction (by difference) | 0.04693 | 0.04724 | 0.05066 | +0.00031 | +0.00373 |
+| Cd total (forceCoeffs, 1000–2000 mean) | 0.28672 | 0.28864 | 0.29500 | +0.00192 | +0.00828 |
+
+"Friction" is the residual (total minus integrated pressure), not an integrated
+shear stress. At the baseline the slant carries about half of Cd, the base about
+37 % and friction about 16 %.
+
+### Flow fields
+
+Same view (symmetry plane, y = 0.5 mm), same colour limits in every case.
+Cp = 2·p̄/U∞² with the outlet pressure as reference. The fields are
+cell-centred and interpolated to points, so the coarse upstream mesh appears
+blocky.
+
+| | Cp | U_x/U∞ |
+|---|---|---|
+| 40 m/s | ![](results/val25_clr50/case_40ms/slice_val25_40ms_Cp.png) | ![](results/val25_clr50/case_40ms/slice_val25_40ms_Ux_over_Uinf.png) |
+| 60 m/s | ![](results/val25_clr50/case_60ms/slice_val25_60ms_Cp.png) | ![](results/val25_clr50/case_60ms/slice_val25_60ms_Ux_over_Uinf.png) |
+| 40 m/s, tu05 | ![](results/val25_clr50/case_40ms_tu05/slice_val25_40ms_tu05_Cp.png) | ![](results/val25_clr50/case_40ms_tu05/slice_val25_40ms_tu05_Ux_over_Uinf.png) |
+
+![centreline Cp](results/val25_clr50/comparisons/centreline_cp_3cases.png)
+
+The three cases are nearly indistinguishable in these views (root-mean-square
+difference of the normalised 40/60 m/s slices: U_x/U∞ 0.022, Cp 0.0028). The
+suction spike at the roof/slant edge (Cp near −2.7) sits at a geometric edge and
+its height depends on local mesh resolution; no mesh study was done, so it carries
+no quantitative claim.
+
+### Physical interpretation
+
+- The wake topology — a single recirculation bubble behind the base ending in the
+  measured interval — is reproduced; the slant boundary layer is not (too thin
+  and too full), so the model does not capture the slant-layer state that
+  feeds the separation at the base.
+- 40 → 60 m/s changes Cd by +0.67 % and Cl by −0.71 %, with the largest change in the
+  pressure drag of the front region and a slightly lower slant contribution.
+- The Cd increase with tu05 (+0.00828) is split between pressure
+  (+0.00455, nearly all of it in the front region) and the friction residual
+  (+0.00373); slant and base nearly offset each other. It is not a
+  separation-driven change. **Hypothesis, not tested:** higher turbulence
+  intensity and viscosity ratio change the boundary-layer development on the nose
+  rounding, which weakens the suction there (the minimum slice Cp is −2.338 for
+  tu05 against −2.450 for the baseline).
+
+### Engineering conclusions
+
+- The model reproduces the position and extent of the recirculation behind this
+  25° Ahmed body; it should not be used for slant-layer or separation-onset
+  predictions without further work.
+- The accuracy of the computed drag is **unknown**: C1 was not evaluated.
+- A change of inlet turbulence from 0.25 % to 0.5 % (with the viscosity ratio from
+  10 to 20) changes Cd by a few percent but does not repair the slant layer.
+
+### Limitations and untested hypotheses
+
+- No mesh-independence or wall-treatment study (by project decision), so model
+  error cannot be separated from numerical error; the C4 numbers carry no
+  uncertainty estimate.
+- Steady RANS with k–ω SST and wall functions; about a quarter of the slant
+  wall-adjacent cells have y+ below 30. Whether wall resolution, the RANS/SST
+  model, or both cause the thin, full slant layer is **untested**.
+- The inlet turbulence is set from an analytic decay relation, and the fields at
+  the nose differ slightly from the design values (0.522 % against 0.5 %).
+- tu05 changes two variables together.
+- Residuals are not converged (limit-cycle); the means average over the oscillation.
+- Only the y = 0 plane files were used. Other planes, the rear-body wall pressure
+  and the near-wall hot-wire data of Experiment 2 were not used.
+- The numerical domain (blockage 2.57 %) does not model the 3/4-open test section of
+  the experiment, and the effect of the lateral and top boundary treatment was not tested.
+- No stilts are modelled.
+- Experiment 1 (drag, 60 m/s, Re 4.29e6) differs from the computed 60 m/s case
+  (Re 4.176e6), and its reference area is not known to be the one used here.
+
+### Reproducibility
+
+Directories: `cases/val25_clr50_mesh` (mesh, built from the frozen 25° STL),
+`cases/val25_clr50_40ms`, `_60ms`, `_40ms_tu05` (same mesh, inlet values in
+`0/include/initialConditions`). Stage 1 uses `endTime 1000`; stage 2 adds the
+`fieldAverage1` block and `endTime 2000` (`startFrom latestTime`). Analysis scripts
+are in `scripts/validation/`: `check_nose_turbulence.py`,
+`sample_ercoftac_y0.py` (requires the ERCOFTAC files, which are not in the repository),
+`diagnose_slant_layer.py`, `visualize_validation_slices.py`,
+`plot_centreline_cp.py`, `plot_force_history.py`. A single driver script (mesh →
+decompose → stage 1 → stage 2) has **not** been written yet.
 
 ## 11. References
 - Ahmed, S.R., Ramm, G., Faltin, G. (1984). *Some Salient Features of
