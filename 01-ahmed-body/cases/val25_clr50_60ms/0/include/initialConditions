@@ -1,0 +1,17 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  11
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+// VALIDATION CASE val25_clr50_60ms: U = 60 m/s, Re_L = 4.176e6 (Exp1 states
+// 4.29e6), nu = 1.5e-5 m2/s. Decision D5: nose Tu = 0.25 %, nut/nu = 10.
+// k0, omega0 are INLET values chosen so free-stream SST decay (beta = 0.0828,
+// beta* = 0.09) over 2.088 m gives that target at the nose; to be verified by
+// sampling the solution.
+flowVelocity         (60 0 0);
+pressure             0;
+turbulentKE          0.1051;
+turbulentOmega       639.8;
+// ************************************************************************* //
