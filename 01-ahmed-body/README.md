@@ -3,7 +3,7 @@
 ## Status
 **ERRATA (2026-10-02): the force coefficients reported in this README are half-body values (multiply by 2) and the 50 mm ground clearance is not modelled in the 0°, 10°, 20°, 30° and 35° cases (the 25° case has it), and the inlet turbulence of the sweep (5%, assumed) is far higher than in the reference experiments. See the Errata section immediately below this block.**
 
-**Update (2026-10-10):** the corrected 25° validation case (50 mm clearance, half-body reference area, inlet turbulence matched to the experiment) has been run at 40 and 60 m/s and compared with ERCOFTAC AC1-05 Experiment 2: the wake recirculation is reproduced, the slant boundary layer is not, and the drag comparison with Experiment 1 (criterion C1) was **not evaluated**. See Section 10.10. This supersedes the statement further down that the validation case is still planned.
+**Update (2026-10-10):** the corrected 25° validation case (50 mm clearance, half-body reference area, inlet turbulence matched to the experiment) has been run at 40 and 60 m/s and compared with ERCOFTAC AC1-05 Experiment 2: the wake recirculation is reproduced, the slant boundary layer is not, and the drag comparison with Experiment 1 (criterion C1) was given **no pass/fail verdict** because the source paper prints no 25° drag value and its two drag curves disagree there (corrected 2026-10-10). See Section 10.10. This supersedes the statement further down that the validation case is still planned.
 
 **Case frozen at commit `72af160`.** The 25° slant / 60 m/s condition is
 complete: mesh validated, steady and transient CFD results obtained,
@@ -147,7 +147,7 @@ half-body reference area 0.056016 m^2, steady RANS, compared with the
 ERCOFTAC AC1-05 data) is planned but **not started**. Its scope is not
 final, and no result of it is claimed here.
 
-**Update 2026-10-10:** the corrected validation case was built and run after this section was written, so it is no longer "not started" and its scope is now fixed; the results, including the one criterion that could not be evaluated (C1, drag against Experiment 1), are reported in Section 10.10. The frozen 25° case itself remains unmodified.
+**Update 2026-10-10:** the corrected validation case was built and run after this section was written, so it is no longer "not started" and its scope is now fixed; the results, including criterion C1 (drag against Experiment 1), which received no pass/fail verdict (corrected 2026-10-10: the source paper prints no 25° drag value), are reported in Section 10.10. The frozen 25° case itself remains unmodified.
 
 ### E4. Inlet turbulence differs strongly from the reference experiments
 
@@ -1911,17 +1911,29 @@ over that oscillation, not converged steady values. The residual histories of th
 
 | id | criterion | baseline (0.25 %) | tu05 (0.5 %) |
 |---|---|---|---|
-| C1 | full-body Cd vs Experiment 1 (Ahmed 1984, 60 m/s): ≤10 % agree, 10–20 % partial, >20 % disagree | **not evaluated** | n/a |
+| C1 | full-body Cd vs Experiment 1 (Ahmed 1984, 60 m/s): ≤10 % agree, 10–20 % partial, >20 % disagree | **no verdict** (corrected 2026-10-10, see below) | n/a |
 | C2 | no reversed flow above the slant at the measured stations | pass | pass |
 | C3a | reversed flow at the wake stations 38, 88, 138 mm | pass | pass |
 | C3b | recirculation end inside 138–288 mm | pass: ends in (188, 238] mm | pass: same interval |
 | C4 | NRMSE/Ub of U and W over slant + wake points: ≤0.05 good, 0.05–0.10 fair, >0.10 poor | 0.1020, **poor** (n = 562) | 0.0960, **fair** |
 | C5 | upstream floor layer, modelled k: report only | see text | see text |
 
-- **C1 could not be evaluated.** The Experiment 1 drag values are not available on the
-  ERCOFTAC page and the original publication (SAE 840300) has not been obtained.
-  Consequently **no statement is made about the accuracy of the computed Cd**
-  (0.2867 at 40 m/s, 0.2886 at 60 m/s).
+- **C1: no pass/fail verdict (corrected 2026-10-10; the earlier text said the paper had
+  not been obtained).** Ahmed et al. (1984), SAE 840300, was obtained. It prints the drag
+  coefficient Cw only at 0° (0.250), about 12.5° (0.230) and 30° (0.378 high-drag,
+  0.260 low-drag) in its Fig. 4. **No 25° value is printed**, and the numeric reference
+  area F is not stated. Two graph readings (approximate, read by eye from the figures,
+  not printed values) disagree with each other: Fig. 4 gives Cw ≈ 0.285 at 25° (±0.005);
+  Fig. 15(e), a second drag-versus-slant curve (0.272 at 0°, 0.33 at 30°), gives about
+  0.25 at 25°. The paper does not explain the difference. Against these, the computed
+  60 m/s Cd of 0.2886 is about +1 % (Fig. 4) or about +15 % (Fig. 15e); the 40 m/s value
+  0.2867 is about +1 % and +15 %. The pre-stated bands would therefore give "agree" or
+  "partial" depending on which figure is trusted, so **no verdict is assigned**.
+  The comparison is further limited because the experiment used stilts with a tare
+  correction and an open test section (our CFD has neither), F is not stated, and the
+  experiment is at Re 4.29e6 against our 4.18e6 at 60 m/s. A close total Cd would not
+  by itself indicate a correct flow field: the slant boundary layer is not reproduced
+  (C4 slant-only, poor).
 - C4 split: slant only 0.1852 (baseline, poor) and 0.1698 (tu05, poor), n = 112; wake only 0.0667
   and 0.0659 (both fair), n = 450. The baseline→tu05 change of the pooled value
   (poor → fair) is a small change of about 0.006 that crosses the 0.10
@@ -2027,7 +2039,7 @@ no quantitative claim.
 - The model reproduces the position and extent of the recirculation behind this
   25° Ahmed body; it should not be used for slant-layer or separation-onset
   predictions without further work.
-- The accuracy of the computed drag is **unknown**: C1 was not evaluated.
+- The accuracy of the computed drag is **not established** (corrected 2026-10-10): the reference Cw at 25° is available only as a graph reading, the paper's two drag curves disagree at 25°, and the experiment included stilts and tare correction that the CFD does not model.
 - A change of inlet turbulence from 0.25 % to 0.5 % (with the viscosity ratio from
   10 to 20) changes Cd by a few percent but does not repair the slant layer.
 
@@ -2066,6 +2078,7 @@ decompose → stage 1 → stage 2) has **not** been written yet.
 ## 11. References
 - Ahmed, S.R., Ramm, G., Faltin, G. (1984). *Some Salient Features of
   the Time-Averaged Ground Vehicle Wake.* SAE Technical Paper 840300.
+  https://doi.org/10.4271/840300
 - Lienhart, H., Becker, S. (2003). *Flow and Turbulence Structure in
   the Wake of a Simplified Car Model.* SAE Technical Paper 2003-01-0656.
 - Thacker, A. et al. (2010, as cited in aspect-ratio wake literature).
