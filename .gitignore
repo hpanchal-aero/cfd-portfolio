@@ -77,3 +77,6 @@ venv/
 !01-ahmed-body/cases/slant25_re4.29M/log.snappyHexMesh_candidate120b
 !01-ahmed-body/cases/slant25_re4.29M_symtest/log.snappyHexMesh_symtest
 !01-ahmed-body/cases/slant25_re4.29M_layerdiag/log.snappyHexMesh_layerdiag
+
+# ERCOFTAC reference data: redistribution rights not established (see validation/reference_data/README.md)
+01-ahmed-body/validation/reference_data/*.dat
