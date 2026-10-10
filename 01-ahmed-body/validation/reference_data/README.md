@@ -1,19 +1,48 @@
 # Reference Data
 
-## ahmed-front-geo.dat
+This directory contains **no third-party measurement data**. It documents what
+reference data the project uses and where to obtain it.
 
-Original measured front-nose geometry data for the Ahmed body, from S.R. Ahmed (DLR Braunschweig), redistributed via the ERCOFTAC Classic Collection (case082, Becker/Lienhart/Stoots):
+## ERCOFTAC AC1-05 (Ahmed body) -- not redistributed here
 
-http://cfd.mace.manchester.ac.uk/ercoftac/doku.php?id=cases:case082
+The experimental data used for validation come from the ERCOFTAC Classic
+Collection, Application Challenge AC1-05 (Ahmed body):
 
-Format: raw (x, y, z) point coordinates in mm, representing 1/4 of the front nose surface (exploiting vertical and horizontal symmetry). This is a digitized/scanned point cloud (~20,000 points, irregular spacing), not a clean set of cross-sectional curves.
+https://kbwiki.ercoftac.org/w/index.php/Test_Data_AC1-05
 
-**Not used directly for geometry construction.** Reconstructing a CAD surface from this raw point cloud (binning, curve fitting per station, lofting) was evaluated and found to add substantial implementation complexity and surface-quality risk for a secondary geometric feature — the dominant physics under investigation in this project is rear-slant-angle-driven separation, not nose-profile fidelity. The project instead uses a standard tangent-arc/fillet approximation of the nose (see `geometry/generate_ahmed_body.py`), consistent with the majority of published Ahmed body CFD studies.
+The page is marked "Application Challenge 1-05 (c) copyright ERCOFTAC 2004".
+As of 2026-10-11 the page states no licence, terms of use or redistribution
+conditions, and this project has not obtained permission to redistribute the
+data. The data files are therefore **not** included in this repository, and no
+figure in this repository plots measured points. To reproduce the validation
+comparison, download the Experiment 2 files from the ERCOFTAC page into a local
+directory outside the repository and pass that location to the scripts in
+`scripts/validation/`.
 
-This file is retained for reference and as documentation of that decision, and could be used as the basis for a higher-fidelity geometry reconstruction in a future extension if justified.
+Sources named on the ERCOFTAC page for this test case:
 
-## ahmed1984_cd_vs_angle.csv
-(to be added — Ahmed et al. 1984 experimental C_D vs slant angle, digitized from published plots)
+- Ahmed, S.R., Ramm, G. and Faltin, G. (1984). *Some Salient Features of the
+  Time-Averaged Ground Vehicle Wake.* SAE Technical Paper 840300.
+  https://doi.org/10.4271/840300
+- Lienhart, H., Stoots, C. and Becker, S. (2000). Flow and turbulence structures
+  in the wake of a simplified car model (Ahmed model). DGLR Fach-Symposium,
+  Stuttgart. (Source of the Experiment 2 data, as listed on the ERCOFTAC page.)
+- Lienhart, H. and Becker, S. (2003). SAE Technical Paper 2003-01-0656.
 
-## lienhart_becker_wake.csv
-(to be added — Lienhart & Becker 2003 wake velocity data at 25°, digitized from published plots)
+## ahmed-front-geo.dat -- removed from tracking (2026-10-11)
+
+This file was a raw point cloud of the Ahmed-body front-nose geometry, headed
+"Original Data of S.R. Ahmed, DLR Braunschweig", taken from the ERCOFTAC
+collection. It was **never used** for geometry construction: the project uses a
+tangent-arc approximation of the nose (`geometry/generate_ahmed_body.py`), as in
+most published Ahmed-body CFD studies. Because redistribution rights are not
+established, the file is no longer tracked and is listed in `.gitignore`. It
+remains present in older commits of the git history (added in f3726d8). An
+earlier version of this README cited a Manchester ERCOFTAC address (case082)
+for it; that identifier was not re-verified against the current ERCOFTAC page.
+
+## Drag data from Ahmed et al. (1984)
+
+No digitised data file is provided. The drag values quoted in the main README
+(Section 10.10) are approximate readings made by eye from the paper's Fig. 4 and
+Fig. 15(e), labelled as such, and are not a digitised dataset.
