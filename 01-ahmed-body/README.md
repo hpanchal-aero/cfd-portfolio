@@ -177,6 +177,42 @@ results of the sweep should be read as results for this inlet
 condition. The planned validation case is intended to use inlet
 turbulence matched to the experiments.
 
+### E5. The Strouhal-number literature check in Sections 6.3, 7 and 9.4 is not supported (added 2026-10-11)
+
+Section 6.3 states that the characteristic length of the Strouhal number
+(body height H) was "verified against literature, not assumed", cites
+"Thacker et al. 2010, on this same 25 deg geometry", and compares the
+result with a published range of 0.18-0.21 and with "0.24 (aspect-ratio
+studies)". On 2026-10-11 these statements were checked and are **not
+supported**:
+
+- The 25 deg rear-slant study by Thacker, Aubrun, Leroy and Devinant
+  (Experiments in Fluids 54, 1479, 2013; DOI 10.1007/s00348-013-1479-5)
+  defines its Strouhal numbers on the mean reattachment length (about 0.11
+  for the 20 Hz bubble and shear-layer motion, 0.6-0.7 for high-frequency
+  shear-layer activity) and, for Kelvin-Helmholtz vortices, on the
+  shear-layer vorticity thickness (about 0.2). It reports no 0.18-0.21
+  slant-surface shedding Strouhal number defined on body height, and its
+  reference list contains no Thacker 2010 paper (its only Thacker reference
+  is J. Wind Eng. Ind. Aerodyn. 107-108, 237-243, 2012). No source was found
+  for the "2010" citation, for 0.18-0.21 as defined here, or for 0.24. They
+  are unverified and are withdrawn as comparison values.
+- St = f H / U_inf with H = 0.288 m is therefore a **choice of definition**,
+  not a literature-verified convention. The frequency (about 65.4 Hz) is
+  unchanged. The arithmetic of Section 9.4 is consistent (the body-length
+  value 1.14 and the height-based value 0.31 differ by L/H = 3.625), but the
+  statement that literature verification supports the height-based convention
+  is unsupported. The statement that St 0.31-0.34 is "on the higher end of
+  published values" is withdrawn: no valid published comparison value is
+  given anywhere in this README.
+- "Cross-validated" in Sections 6.3, 7 and 8 refers to the 0.33% agreement
+  between the force frequency and a wake-probe frequency, both taken from
+  the same transient run. That shows the oscillation is a consistent feature
+  of this simulation. It is **not** validation against experiment and does not
+  show that the oscillation is physical; the inlet turbulence of E4 and the
+  coarsened transient mesh remain untested influences. Read it as internal
+  consistency only.
+
 ---
 
 ## 1. Engineering Objective
@@ -380,6 +416,10 @@ with the force signal:
 | Near-wake velocity probe | 65.57 Hz |
 | **Agreement** | **0.33%** |
 
+**[Corrected 2026-10-11, see E5: the literature claims in this subsection are
+unsupported; the height-based St is a choice, and the comparison values below
+are unverified.]**
+
 **Strouhal number — characteristic length verified against
 literature, not assumed**: Ahmed-body wake-shedding studies
 (Thacker et al. 2010, on this same 25° geometry; aspect-ratio wake
@@ -427,7 +467,8 @@ certainty from this evidence alone.
    against an independent wake-velocity probe (0.33% agreement), and
    (c) visual confirmation of an evolving recirculation structure
    consistent with a literature-documented mechanism.
-3. The corrected Strouhal number (St ≈ 0.31–0.34, using the
+3. [Corrected 2026-10-11, see E5: the literature comparison is unsupported.]
+   The corrected Strouhal number (St ≈ 0.31–0.34, using the
    literature-verified height-based convention) is in the right order
    of magnitude relative to published values, though higher than the
    most directly comparable literature figures — a limitation
@@ -441,7 +482,8 @@ certainty from this evidence alone.
   from the mesh validated for the steady case. No mesh-independence
   study was performed at this transient resolution. The frequency and
   Strouhal number above should be read as a genuine, cross-validated
-  qualitative finding, not a quantitatively converged result.
+  [corrected 2026-10-11, see E5: internal consistency within one run, not
+  validation against experiment] qualitative finding, not a quantitatively converged result.
 - **No mean/RMS Cd or Cl value from this project has been compared to
   Ahmed (1984) or Lienhart & Becker (2003) experimental data.** Doing
   so would require, at minimum, matching the exact experimental
@@ -506,7 +548,8 @@ recomputing.
 
 **9.4 — Strouhal characteristic-length error.** An initial calculation
 using body length L gave St ≈ 1.14 — implausible for bluff-body wake
-shedding. Literature verification found the wake-shedding convention
+shedding. [Corrected 2026-10-11, see E5: no supporting source was found.]
+Literature verification found the wake-shedding convention
 uses body height H, not L (L remains correct for this project's
 Reynolds number definition, a different, unrelated quantity). This is
 documented as a genuine error, caught before being reported as final.
@@ -2081,5 +2124,17 @@ decompose → stage 1 → stage 2) has **not** been written yet.
   https://doi.org/10.4271/840300
 - Lienhart, H., Becker, S. (2003). *Flow and Turbulence Structure in
   the Wake of a Simplified Car Model.* SAE Technical Paper 2003-01-0656.
-- Thacker, A. et al. (2010, as cited in aspect-ratio wake literature).
-  Strouhal number for 25° slant Ahmed-body shedding, St = 0.18–0.21.
+  https://doi.org/10.4271/2003-01-0656
+- Lienhart, H., Stoots, C., Becker, S. (2000). *Flow and Turbulence
+  Structures in the Wake of a Simplified Car Model (Ahmed Model).* DGLR
+  Fach-Symposium, Stuttgart. (Source of the ERCOFTAC Experiment 2 data;
+  title as printed on the ERCOFTAC page, not independently checked.)
+- ERCOFTAC Classic Collection, Application Challenge AC1-05 "Ahmed body",
+  (c) copyright ERCOFTAC 2004.
+  https://kbwiki.ercoftac.org/w/index.php/Test_Data_AC1-05 (accessed
+  2026-10-11). The measured data are not redistributed in this repository.
+- Thacker, A., Aubrun, S., Leroy, A., Devinant, P. (2013). *Experimental
+  characterization of flow unsteadiness in the centerline plane of an Ahmed
+  body rear slant.* Experiments in Fluids 54, 1479.
+  https://doi.org/10.1007/s00348-013-1479-5 (Cited in E5. Replaces an earlier
+  "Thacker et al. (2010)" entry that could not be verified.)
