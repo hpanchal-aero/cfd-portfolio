@@ -5,6 +5,16 @@
 
 **Update (2026-10-10):** the corrected 25° validation case (50 mm clearance, half-body reference area, inlet turbulence matched to the experiment) has been run at 40 and 60 m/s and compared with ERCOFTAC AC1-05 Experiment 2: the wake recirculation is reproduced, the slant boundary layer is not, and the drag comparison with Experiment 1 (criterion C1) was given **no pass/fail verdict** because the source paper prints no 25° drag value and its two drag curves disagree there (corrected 2026-10-10). See Section 10.10. This supersedes the statement further down that the validation case is still planned.
 
+**Update (2026-10-11):** Section 8.0 now states in one place what the project does
+and does not establish. In short: the wake recirculation of the validation case is
+reproduced, the slant boundary layer is not, and drag accuracy at 25° is not
+established. The 0°-35° sweep is not validated and its angles are not comparable
+(E1, E2, E4). Where the text below calls the 25° case's mesh "validated" or its wake
+dynamics "cross-validated", that means internal consistency only, not agreement with
+experiment (E2, E5). The 40 m/s validation case was rebuilt from the tracked files
+with the driver script and reproduced the window statistics; the 60 m/s and Tu 0.5 %
+cases were not re-run with it.
+
 **Case frozen at commit `72af160`.** The 25° slant / 60 m/s condition is
 complete: mesh validated, steady and transient CFD results obtained,
 wake dynamics cross-validated against an independent probe measurement.
@@ -41,7 +51,8 @@ fluctuation (Cd 0.1589 over t = 0.14-0.30 s), and its frequency
 analysis narrowly fails a pre-stated corroboration criterion, so no
 Strouhal number is reported — see Section 10.9. Remaining planned
 work for this project: the 25°/40 m/s validation case and a final
-limitations pass.
+limitations pass. [Updated 2026-10-11: both are done; see Section 10.10, Section 8.0 and the
+2026-10-11 update above.]
 
 ## Errata (added 2026-10-02; supersedes earlier statements where they conflict)
 
@@ -477,6 +488,61 @@ certainty from this evidence alone.
 ---
 
 ## 8. Limitations — What Should Not Be Concluded
+
+### 8.0 Consolidated statement of scope (added 2026-10-11; supersedes the bullets below wherever they conflict)
+
+This block ties together errata E1-E5 and Section 10.10. The bullets that follow
+are the original Section 8 text, left visible. Read them with this scoping: they
+describe the **0°-35° sweep**, not the validation case. The second bullet ("no
+value compared with experiment; the 40 m/s Lienhart & Becker case remains
+unexecuted") was true for the sweep and is superseded by Section 10.10 for the
+validation case.
+
+**What the project establishes**
+
+- On the validation case (25° slant, 50 mm ground clearance, half-body Aref
+  0.056016 m², inlet turbulence matched to the experiment, steady SIMPLEC,
+  k-omega SST with wall functions) the CFD reproduces the measured wake
+  recirculation: reversed-flow point counts at x = 38/88/138 mm are 10/8/6
+  against 8/7/6 measured, and the end of the recirculation lies in the same
+  interval as the measurement, (188, 238] mm (C3, pass). No reversed flow is
+  found over the slant at the measured points (C2, pass; the lowest measured
+  point is about 14-15 mm from the surface, so this check cannot see a thin
+  bubble). The wake-only normalised RMS error of U and W is 0.067 ("fair").
+- The baseline run is statistically stationary over iterations 1000-2000
+  (drift/std -0.12, four-window spread 0.09 %), and the 40 m/s case was
+  rebuilt and re-run from the tracked files with the driver script, reproducing
+  the window statistics (histories are not bit-identical; Section 10.10).
+
+**What the project does not establish**
+
+- **The slant boundary layer is not reproduced.** About 15 mm above the slant
+  the computed speed is 1.5-2.6 times the measured one, and the pooled C4 error
+  is 0.1020 ("poor", just above the 0.10 threshold; slant-only 0.185). The cause
+  (wall resolution, the RANS/SST model, free-stream turbulence, or a mix) is
+  untested. The Tu 0.5 % run is a sensitivity test, not a resolution of this.
+- **Drag accuracy at 25° is not established.** No usable measured 25° drag value
+  exists in the sources available: SAE 840300 prints no 25° value, and two of its
+  figures disagree with each other when read at 25° (Section 10.10, C1). C1 is
+  reported as informational, with no pass/fail verdict. The CFD has no stilts,
+  no tare correction and no open test section, and the reference area of the
+  experiment is not stated.
+- **No mesh-independence or wall-treatment study** was done (project decision),
+  so model error cannot be separated from numerical error and no comparison
+  carries an uncertainty estimate.
+- **The 0°-35° sweep is not validated and not comparable across angles.**
+  Its force coefficients are half-body values (multiply by 2; E1). The body sits
+  on the floor in the 0°, 10°, 20°, 30° and 35° cases and has the 50 mm clearance
+  only at 25° (E2). All sweep cases used an inlet turbulence of about 5 %
+  intensity with a viscosity ratio near 9,800, far above the experiments (E4).
+  The effect of that setting on the sweep results was never tested.
+- **Strouhal numbers and frequencies in the sweep are internal results.** They
+  were compared with themselves, not with experiment, and the literature support
+  once cited for them is withdrawn (E5). The height-based Strouhal number is a
+  choice of definition.
+- **Scope of the validation:** one geometry, one slant angle, one turbulence
+  model, steady RANS, symmetry-plane (y = 0) data only; the 60 m/s and Tu 0.5 %
+  cases were not re-run with the driver.
 
 - **The transient mesh (872,391 cells, level 4,5) is coarsened ~3.1×**
   from the mesh validated for the steady case. No mesh-independence
@@ -1632,7 +1698,9 @@ No solver run of any kind was performed on the steady case. The
 steady mesh stands as a checkMesh-OK artifact never exercised with the
 solver. This leaves unanswered whether the steady-non-convergence
 premise holds for angles past the drag-crisis region (see the
-limitations carried forward below).
+limitations carried forward below). [Resolved 2026-10-11: the scope
+statement is in Section 8.0 and the 35° list below; the steady premise was
+never tested.]
 
 ### Transient PIMPLE
 
@@ -1718,7 +1786,9 @@ of the record, **not confidence intervals** (the samples are
 autocorrelated and no effective sample size was estimated). Cd means
 should not be compared across angles without the caveats of differing
 window, stationarity and mesh level; a consolidated comparison belongs
-in the final limitations pass.
+in the final limitations pass. [Resolved 2026-10-11: no cross-angle
+comparison is made; Section 8.0 states that the sweep Cd values are not
+comparable across angles (E1, E2, E4).]
 
 ### Frequency/period result: criterion not met, no Strouhal number
 
@@ -1888,7 +1958,7 @@ Existing scripts reused: `compute_transient_deltat.py`,
 cleaned scratch copy of the force record), `visualize_burst_sequence.py`
 (unmodified).
 
-### Limitations specific to 35° (to be consolidated in the final pass)
+### Limitations specific to 35° (cross-angle and validation caveats are in Section 8.0; this list is the 35°-specific detail)
 - No steady solver run; no steady baseline.
 - Transient mesh level (4,5) differs from 30° (5,6); finest cell and
   deltaT differ ~2.7-3.2x from the 0/10/20° (4,5) meshes.
