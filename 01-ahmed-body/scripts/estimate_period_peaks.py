@@ -9,7 +9,7 @@ available)").
 Finds local maxima (peaks) in Cd(t) within a specified window, reports
 the time interval between consecutive peaks (= period estimate), and
 the corresponding frequency and Strouhal number (using body height H,
-per the literature convention verified for the 25deg case).
+a choice of definition, not a literature-verified convention; see README erratum E5).
 
 Usage:
     python3 estimate_period_peaks.py <case_dir> --window-start T0 --window-end T1
