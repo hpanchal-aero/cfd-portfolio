@@ -1856,10 +1856,34 @@ checked, so no monotonic trend can be claimed.
   only after ~0.14 s does not test steady-solver behaviour.
 
 ### Reproducibility notes for this case
-The 35° stationarity, seam, Lomb-Scargle/probe and frame RMS-deviation
-analyses were run as inline Python and are **not yet saved under
-`scripts/`**. Stitched records were built in `/tmp` (not in the
-repository). Existing scripts reused: `compute_transient_deltat.py`,
+**Updated 2026-10-11.** The 35° stitching, stationarity, Lomb-Scargle/probe and
+frame RMS-deviation analyses were first run as inline Python. They are now saved as
+`scripts/stitch_force_segments.py`, `stationarity_report.py`,
+`spectral_probe_check.py` and `slice_frame_deviation.py`, and the stitched record is
+regenerated from the raw `postProcessing` segments (the original `/tmp` copies no
+longer exist). Each script was run against the numbers published for this case:
+
+- *Stitching*: 16,565 rows, t = 0-0.3 s, strictly increasing, 0 duplicates, 0 NaN; the
+  startup outlier (t = 2.63158e-05 s) dropped; the two t = 0.2 rows identical.
+- *Stationarity*: all published drift/std values, window means and standard deviations,
+  and the 5- and 4-sub-window spreads reproduced. The published 1.15 % for window
+  0.18-0.30 is the 4 equal-time sub-window spread.
+- *Lomb-Scargle*: all published peaks, ranks and x-values reproduced (linear detrend,
+  grid 0.5-150 Hz in 0.5 Hz steps, peaks ranked inside the 10-100 Hz band, which the
+  published ranks require; the band rule is inferred), and the verdict (corroboration
+  criterion not met). One match not listed in the table above also exists: Cd 90.5 Hz
+  with Uy 90.0 Hz in window 0.18-0.30; it does not change the verdict, because in
+  window 0.14-0.30 both Cd (x4.1) and Uy (x3.6) are below 5.
+- *Frame deviation*: the near-ground minima (row z = 0.01044 m) and the whole-slice
+  pressure minima are reproduced exactly; the pressure and Ux RMS deviations are
+  reproduced to within about 3 % and the wake-mean Ux is about 0.05 m/s below the values
+  quoted above. The wake region is not defined in this README, so the script uses an
+  inferred rectangle (x 1.044-6.264 m, z 0-0.8 m, wall row included); the agreement is
+  approximate, not exact.
+- *Not reproduced*: the "block" Cd standard deviations (0.00082-0.00351 above). The block
+  size was not recorded, so that number rests on the original inline analysis only.
+
+Existing scripts reused: `compute_transient_deltat.py`,
 `inspect_early_transient.py`, `estimate_period_peaks.py` (run from a
 cleaned scratch copy of the force record), `visualize_burst_sequence.py`
 (unmodified).
