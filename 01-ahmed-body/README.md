@@ -2115,8 +2115,32 @@ Directories: `cases/val25_clr50_mesh` (mesh, built from the frozen 25° STL),
 are in `scripts/validation/`: `check_nose_turbulence.py`,
 `sample_ercoftac_y0.py` (requires the ERCOFTAC files, which are not in the repository),
 `diagnose_slant_layer.py`, `visualize_validation_slices.py`,
-`plot_centreline_cp.py`, `plot_force_history.py`. A single driver script (mesh →
-decompose → stage 1 → stage 2) has **not** been written yet.
+`plot_centreline_cp.py`, `plot_force_history.py`. A driver,
+`scripts/validation/run_validation_case.sh` (added 2026-10-11), runs the whole chain
+for one case in a fresh directory outside the repository: `blockMesh`,
+`snappyHexMesh -overwrite`, `checkMesh`, `decomposePar`, stage 1, stage 2 and
+`reconstructPar -latestTime`. OpenFOAM 11 must be sourced, the work directory must not
+exist, and the case uses 8 ranks:
+scripts/validation/run_validation_case.sh cases/val25_clr50_40ms ~/work/val25_40ms
+
+**Verification (2026-10-11, 40 m/s case only).** Rebuilt from the tracked files with the
+driver (stage 1 and stage 2, about 4.8 h wall time on 8 ranks including meshing), the
+mesh was byte-identical to the committed mesh case (md5 of `points`, `faces`, `owner`,
+`neighbour`; 2,725,204 cells). Over iterations 1000-2000, Cd = 0.28672 (std 0.00308) and
+Cl = 0.32051 (std 0.07547) matched the original run to the printed digits, with
+stationarity statistics drift/std -0.118 and 4-window spread 0.095 %. The two force
+histories are not bit-identical: the largest pointwise difference over 1000-2000 is
+7.5e-5 in Cd and 3.9e-4 in Cl, and the differences shrink to about 1e-6 by iteration 1500.
+
+**Limits of this verification.** The 60 m/s and Tu 0.5 % cases were not re-run with the
+driver (they differ from the verified case only in `0/include/initialConditions`). The
+original stage-1 `controlDict` was not saved, so the driver derives stage 1 from the
+tracked stage-2 file (`endTime 1000`, `fieldAverage1` removed); the original 40 m/s
+stage 1 was run in two pieces after a manual stop at iteration 312, whereas the driver
+runs it in one. "Reproduced" here means the same mesh and the same window statistics, not
+identical iteration histories (restart files are written with 6 significant digits). The
+driver was first checked with a short smoke test (`--mesh-from`, `--stage1-end 50`,
+`--stage2-end 100`).
 
 ## 11. References
 - Ahmed, S.R., Ramm, G., Faltin, G. (1984). *Some Salient Features of
