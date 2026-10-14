@@ -1,6 +1,17 @@
 #!/usr/bin/python3
 """Sample the iteration-averaged Ahmed-body solution at the ERCOFTAC AC1-05
-(Lienhart et al. 2000, Exp2) y = 0 measurement points and evaluate C2-C4 (+C5 report).
+(Lienhart et al. 2000, Exp2) y = 0 measurement points and evaluate the pre-stated
+criteria (+ C5 report).
+
+--angle 25 (default): criteria C2-C4 as approved 2026-10-04/05 (attached slant flow
+measured: C2 = no reversed flow above the slant; C3 window 138-288 mm).
+--angle 35: criteria C2'-C4' as approved 2026-10-11 (separated slant flow measured):
+  C2'  reversed flow at every measured slant station x = -123..-3 mm and the first
+       reversed station in {-163, -143, -123} (measured onset: -143);
+  C3a' reversed flow at focus stations 17, 37, 87 and global stations 137, 187, 237, 287;
+  C3b' CFD recirculation-end interval inside the window [237, 387] mm
+       (measured end interval (287, 337]; +-50 mm, a convention);
+  C4'  pooled NRMSE of U and W / Ub with the 25 deg thresholds (<=0.05 good, <=0.10 fair).
 
 Frame: ERCOFTAC x = 0 is the rear base -> x_ours = x_data/1000 + 1.044;
 z = 0 is the floor in both frames. Declared units in the .dat files are 'm'
@@ -14,7 +25,6 @@ X_REAR = 1.044
 UB = 40.0
 Y_OFF = 1.0e-4
 SLANT_LEN_MM = 222.0
-SLANT_DEG = 25.0
 
 
 def load_dat(path):
@@ -83,6 +93,14 @@ def end_interval(rows, col):
     return xl, (xs[i + 1] if i + 1 < len(xs) else None)
 
 
+def has_reversed(rows, x):
+    """True only if station x exists in rows and the CFD has reversed flow there."""
+    for r in rows:
+        if abs(r[0] - x) < 1e-6:
+            return r[4] > 0
+    return False
+
+
 def grade(v):
     return "good" if v <= 0.05 else ("fair" if v <= 0.10 else "poor")
 
@@ -92,15 +110,17 @@ def main():
     ap.add_argument("--vtk", required=True)
     ap.add_argument("--data-dir", required=True)
     ap.add_argument("--out-dir", required=True)
+    ap.add_argument("--angle", type=int, choices=(25, 35), default=25)
     args = ap.parse_args()
+    angle = args.angle
     os.makedirs(args.out_dir, exist_ok=True)
     mesh = pv.read(args.vtk)
-    G = sample_file(mesh, load_dat(os.path.join(args.data_dir, "Ahmed_25_y=0_global.dat")))
-    F = sample_file(mesh, load_dat(os.path.join(args.data_dir, "Ahmed_25_y=0_focus.dat")))
+    G = sample_file(mesh, load_dat(os.path.join(args.data_dir, "Ahmed_%d_y=0_global.dat" % angle)))
+    F = sample_file(mesh, load_dat(os.path.join(args.data_dir, "Ahmed_%d_y=0_focus.dat" % angle)))
     for name, d in (("global", G), ("focus", F)):
         print("%s: %d points, %d valid (in fluid mesh), %d invalid"
               % (name, len(d["ok"]), d["ok"].sum(), (~d["ok"]).sum()))
-    slant_x0 = -SLANT_LEN_MM * np.cos(np.radians(SLANT_DEG))
+    slant_x0 = -SLANT_LEN_MM * np.cos(np.radians(float(angle)))
     print("slant starts at x_data = %.2f mm" % slant_x0)
     slant = sel(F, slant_x0, 0.0)
     wake = sel(G, 1.0, 1e9)
@@ -110,20 +130,44 @@ def main():
     sr = station_rows(slant)
     print_rows("SLANT stations (focus file, x_data in [%.1f, 0])" % slant_x0, sr)
     rc, re_ = sum(r[4] for r in sr), sum(r[3] for r in sr)
-    print("C2: reversed-flow points above slant: CFD %d, measured %d -> %s"
-          % (rc, re_, "PASS" if rc == 0 else "FAIL"))
+    if angle == 25:
+        print("C2: reversed-flow points above slant: CFD %d, measured %d -> %s"
+              % (rc, re_, "PASS" if rc == 0 else "FAIL"))
+    else:
+        req = (-123.0, -103.0, -83.0, -63.0, -43.0, -23.0, -3.0)
+        c2a = all(has_reversed(sr, x) for x in req)
+        first_cfd = min((r[0] for r in sr if r[4] > 0), default=None)
+        first_exp = min((r[0] for r in sr if r[3] > 0), default=None)
+        c2b = first_cfd in (-163.0, -143.0, -123.0)
+        print("C2' reversed-flow points above slant: CFD %d, measured %d (report)" % (rc, re_))
+        print("C2'a reversed flow at every slant station -123..-3 mm -> %s"
+              % ("PASS" if c2a else "FAIL"))
+        print("C2'b first reversed station: CFD %s, measured %s; allowed -163, -143, -123 -> %s"
+              % (first_cfd, first_exp, "PASS" if c2b else "FAIL"))
 
     # ---- C3
+    if angle != 25:
+        fw = station_rows(sel(F, 1.0, 1e9))
+        print_rows("WAKE stations (focus file, x_data > 0)", fw)
     wr = station_rows(wake)
     print_rows("WAKE stations (global file, x_data > 0)", wr)
     by_x = {r[0]: r for r in wr}
-    c3a = all(by_x[x][4] > 0 for x in (38.0, 88.0, 138.0))
     xl, xn = end_interval(wr, 4)
     xle, xne = end_interval(wr, 3)
-    c3b = (xl is not None and xn is not None and xl >= 138.0 and xn <= 288.0)
-    print("C3a: reversed flow at 38, 88, 138 mm -> %s" % ("PASS" if c3a else "FAIL"))
-    print("C3b: CFD recirculation end in (%s, %s] mm; window [138, 288] -> %s"
-          % (xl, xn, "PASS" if c3b else "FAIL"))
+    if angle == 25:
+        c3a = all(by_x[x][4] > 0 for x in (38.0, 88.0, 138.0))
+        c3b = (xl is not None and xn is not None and xl >= 138.0 and xn <= 288.0)
+        print("C3a: reversed flow at 38, 88, 138 mm -> %s" % ("PASS" if c3a else "FAIL"))
+        print("C3b: CFD recirculation end in (%s, %s] mm; window [138, 288] -> %s"
+              % (xl, xn, "PASS" if c3b else "FAIL"))
+    else:
+        c3a = (all(has_reversed(fw, x) for x in (17.0, 37.0, 87.0))
+               and all(has_reversed(wr, x) for x in (137.0, 187.0, 237.0, 287.0)))
+        c3b = (xl is not None and xn is not None and xl >= 237.0 and xn <= 387.0)
+        print("C3'a reversed flow at focus 17, 37, 87 and global 137, 187, 237, 287 mm -> %s"
+              % ("PASS" if c3a else "FAIL"))
+        print("C3'b CFD recirculation end in (%s, %s] mm; window [237, 387] -> %s"
+              % (xl, xn, "PASS" if c3b else "FAIL"))
     print("     measured end interval (report only): (%s, %s] mm" % (xle, xne))
 
     # ---- C4
