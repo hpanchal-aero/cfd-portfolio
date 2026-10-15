@@ -1,0 +1,3 @@
+angle_deg,wake_reversed_extent_m,wake_reversed_area_m2,slant_region_reversed_area_m2,Ux_over_Uinf_min
+25,0.1879,0.01472,0.00000,-0.336
+35,0.2401,0.03204,0.00549,-0.401

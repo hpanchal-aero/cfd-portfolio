@@ -1,0 +1,26 @@
+
+25 deg: Cp (outlet-ref) at x=-2.0,-1.2,-0.4: [0.0175 0.0204 0.0246] ; p_ref = 16.2944 (x=-1.2)
+  underside (n_z>0.5)      faces 12688  min Cp -1.419 at x=0.082
+  roof + slant (n_z<-0.5)  faces 12688  min Cp -2.775 at x=0.843
+  region           faces      area     Cd_pressure   share_of_total
+  front  x<0.10      50872   0.09210     -0.01432         -5.0 %
+  mid 0.10..slant   302139   0.50234      0.00041          0.1 %
+  slant              23715   0.04279      0.14571         50.8 %
+  base (rear face)   23095   0.03772      0.10656         37.2 %
+  other (x>slant)    52518   0.08771      0.00142          0.5 %
+  TOTAL pressure Cd 0.23979 ; total Cd from forceCoeffs 0.28672 ; friction by difference 0.04693 (16.4 %)
+  face-count check: 452339 of 452339 faces assigned
+
+35 deg: Cp (outlet-ref) at x=-2.0,-1.2,-0.4: [0.0181 0.0212 0.0273] ; p_ref = 16.9958 (x=-1.2)
+  underside (n_z>0.5)      faces 12688  min Cp -1.419 at x=0.082
+  roof + slant (n_z<-0.5)  faces 12688  min Cp -1.953 at x=0.863
+  region           faces      area     Cd_pressure   share_of_total
+  front  x<0.10      50872   0.09210     -0.01370         -4.6 %
+  mid 0.10..slant   310104   0.51556      0.00098          0.3 %
+  slant              21390   0.04281      0.14970         50.4 %
+  base (rear face)   19220   0.03134      0.11474         38.6 %
+  other (x>slant)    45619   0.07595      0.00109          0.4 %
+  TOTAL pressure Cd 0.25281 ; total Cd from forceCoeffs 0.29687 ; friction by difference 0.04406 (14.8 %)
+  face-count check: 447205 of 447205 faces assigned
+
+wrote results/val35_clr50/comparisons/centreline_cp_25_vs_35.png
