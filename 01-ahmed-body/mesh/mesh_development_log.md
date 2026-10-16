@@ -1,3 +1,12 @@
+> **Original working log (note added 2026-10-16).** The text below is the unedited log
+> kept as a record. Some of its statements were later withdrawn or qualified: the
+> Strouhal-number comparison with the literature and the conclusion that the oscillation
+> is a "confidently physical" wake mode are not supported (errata E5 and E7), and the
+> literature citations in the rear-corner and half-domain sections were not checked
+> against the papers. A readable account with these corrections applied is in
+> [../docs/development-log.md](../docs/development-log.md); the corrections are in
+> [../docs/errata.md](../docs/errata.md).
+
 # Mesh Development Log — slant25_re4.29M
 
 ## Iteration 1 — FAILED (zero boundary layers)
