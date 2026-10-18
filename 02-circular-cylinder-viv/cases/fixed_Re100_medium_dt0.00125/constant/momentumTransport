@@ -1,0 +1,11 @@
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      momentumTransport;
+}
+
+// 2D laminar flow, Re = 100 (and 150 later): no turbulence model.
+
+simulationType  laminar;

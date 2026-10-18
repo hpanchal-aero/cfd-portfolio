@@ -1,0 +1,14 @@
+{
+  "file": "fixed_Re100_coarse_dt0.0025/postProcessing/forces/0/forceCoeffs.dat",
+  "t_start": 122.8828475239514,
+  "t_end": 176.9172706417124,
+  "n_periods": 9,
+  "St_zero_crossing": 0.16656049015986843,
+  "St_fft": 0.1665629175025267,
+  "Cd_mean": 1.3561021853666775,
+  "Cd_std": 0.005989443713634394,
+  "Cl_rms": 0.22442942152984827,
+  "Cl_amplitude": 0.3176686305,
+  "period_mean": 6.003824790862335,
+  "period_std": 5.4848017735653875e-05
+}

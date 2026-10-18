@@ -1,0 +1,26 @@
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      meshQualityDict;
+}
+
+// Diagnostic limits for checkMesh -meshQuality.
+// maxSkewness is set BELOW the measured maximum (0.80) on purpose, so that the
+// faces above it are reported and written out as a set, to find where they are.
+
+maxNonOrtho             65;
+maxBoundarySkewness     0.6;
+maxInternalSkewness     0.6;
+maxConcave              80;
+minVol                  1e-13;
+minTetQuality           1e-15;
+minArea                 -1;
+minTwist                0.02;
+minDeterminant          0.001;
+minFaceWeight           0.05;
+minVolRatio             0.01;
+minTriangleTwist        -1;
+nSmoothScale            4;
+errorReduction          0.75;

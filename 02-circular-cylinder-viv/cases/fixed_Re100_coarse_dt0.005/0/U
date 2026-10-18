@@ -1,0 +1,52 @@
+FoamFile
+{
+    format      ascii;
+    class       volVectorField;
+    object      U;
+}
+
+dimensions      [0 1 -1 0 0 0 0];
+
+// Small transverse component only seeds the vortex-shedding instability.
+internalField   uniform (1 0.05 0);
+
+boundaryField
+{
+    inlet
+    {
+        type            fixedValue;
+        value           uniform (1 0 0);
+    }
+
+    outlet
+    {
+        type            inletOutlet;
+        inletValue      uniform (0 0 0);
+        value           uniform (1 0 0);
+    }
+
+    top
+    {
+        type            slip;
+    }
+
+    bottom
+    {
+        type            slip;
+    }
+
+    cylinder
+    {
+        type            noSlip;
+    }
+
+    front
+    {
+        type            empty;
+    }
+
+    back
+    {
+        type            empty;
+    }
+}
