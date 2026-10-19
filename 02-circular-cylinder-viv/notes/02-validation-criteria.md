@@ -40,3 +40,20 @@ band = max(floor, U_num + U_ref)
 - A failure is reported as a failure and investigated. The set-up is not tuned to make it agree.
 - The floors cannot change after a reference value has been read. Any later change needs a new,
   dated entry here that states the reason.
+
+## 2026-10-19 - domain-size term (decision D7b)
+Decided before any domain-size result was read, and before any reference
+value was read.
+- Domain study: three single-boundary runs on the medium mesh at
+  dt = 0.0025 (cross-flow y = +/-30, upstream x_in = 30, downstream
+  x_out = 60) plus a regenerated baseline replicate (same extents,
+  mesh generated again).
+- The domain-size term in the numerical uncertainty is the SUM of the
+  absolute changes of the three single-boundary runs relative to the
+  baseline, per quantity, expressed like the mesh and time-step terms
+  (relative to the value of the larger configuration).
+- Replicate scatter is reported next to the domain results as the
+  resolution limit. A change smaller than the scatter is flagged
+  "not resolved" but is still counted at its measured value. The
+  scatter is not an extra term and is not subtracted.
+- Floors (St 2 %, mean Cd 3 %, Cl rms 10 %) are unchanged.
