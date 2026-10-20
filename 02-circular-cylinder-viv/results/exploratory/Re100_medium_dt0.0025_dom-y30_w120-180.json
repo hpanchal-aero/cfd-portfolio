@@ -1,0 +1,14 @@
+{
+  "file": "fixed_Re100_medium_dt0.0025_dom-y30/postProcessing/forces/0/forceCoeffs.dat",
+  "t_start": 124.1300499673637,
+  "t_end": 178.19026892021793,
+  "n_periods": 9,
+  "St_zero_crossing": 0.16648101273598015,
+  "St_fft": 0.16648359038044372,
+  "Cd_mean": 1.3505876022734,
+  "Cd_std": 0.0063229427298289904,
+  "Cl_rms": 0.22841910665843487,
+  "Cl_amplitude": 0.323221589,
+  "period_mean": 6.0066909947615805,
+  "period_std": 2.3918404685329677e-05
+}
