@@ -57,3 +57,20 @@ value was read.
   "not resolved" but is still counted at its measured value. The
   scatter is not an extra term and is not subtracted.
 - Floors (St 2 %, mean Cd 3 %, Cl rms 10 %) are unchanged.
+
+## 2026-10-22 - reference for St, compared value, U_ref (clarification; floors unchanged)
+Written after the reference source (Williamson 1989, Eq. 6) had been read and after
+the baseline St had been seen to lie 1.4-1.7 % above it. It clarifies what the rule
+above leaves open; it does not change any floor.
+- St reference: C. H. K. Williamson, J. Fluid Mech. 206 (1989) 579-627, Eq. (6),
+  St = A/Re + B + C*Re with A = -3.3265, B = 0.1816, C = 1.600e-4 (read from the
+  PDF, p. 606).
+- Compared value: the baseline configuration (medium mesh, dt = 0.0025, baseline
+  domain), the one whose differences define U_num. If the domain effects add up
+  (not tested), a domain-enlarged estimate would lie closer to the reference, so
+  the baseline is the less favourable choice.
+- U_ref for St = 0.06 %, the average percentage error of the fit stated by the
+  paper (p. 607). It is a lower bound for the reference uncertainty: the
+  measurement uncertainty is not given in the parts of the paper that were read.
+- Not read, not used: the Appendix B data tables.
+- Mean Cd and Cl rms: no reference chosen yet (decision D9 open).
