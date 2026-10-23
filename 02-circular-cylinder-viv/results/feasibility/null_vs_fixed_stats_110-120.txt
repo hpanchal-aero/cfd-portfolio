@@ -1,0 +1,8 @@
+window [110, 120], 4001 joined samples
+1. mean Cd: ref 1.33791  test 1.33581  diff -0.157 %  (tol 0.5 %)  PASS
+2. Cl rms:  ref 0.35180  test 0.34774  diff -1.154 %  (tol 2.0 %)  PASS
+3. upward Cl zero crossings (ref, test, shift):
+      111.3567  111.3422  -0.0145
+      116.7322  116.7161  -0.0160
+   max |shift| 0.0160  (tol 0.05)  PASS
+OVERALL: PASS

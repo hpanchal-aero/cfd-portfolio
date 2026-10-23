@@ -1,0 +1,35 @@
+=========== meshzone_i1.5_o10 -time 0
+    cells:            28663
+    Max aspect ratio = 15.377321 OK.
+    Min volume = 4.2569134e-06. Max volume = 0.17870817.  Total volume = 134.92149.  Cell volumes OK.
+    Mesh non-orthogonality Max: 33.260928 average: 5.9326394
+    Max skewness = 0.80298017 OK.
+Mesh OK.
+=========== meshzone_i1.5_o10 -time 0.35
+    cells:            28663
+    Max aspect ratio = 15.377321 OK.
+    Min volume = 4.2569133e-06. Max volume = 0.17870817.  Total volume = 134.92149.  Cell volumes OK.
+    Mesh non-orthogonality Max: 33.356397 average: 6.3025142
+    Max skewness = 0.80298017 OK.
+Mesh OK.
+=========== moving_Re150_release_Ur5_medium_dt0.0025 -time 120
+    cells:            28663
+    Max aspect ratio = 15.377321 OK.
+    Min volume = 4.2569133e-06. Max volume = 0.17870817.  Total volume = 134.92149.  Cell volumes OK.
+    Mesh non-orthogonality Max: 33.342245 average: 6.1896057
+    Max skewness = 0.80298017 OK.
+Mesh OK.
+=========== moving_Re150_release_Ur5_medium_dt0.0025 -time 140
+    cells:            28663
+    Max aspect ratio = 15.377321 OK.
+    Min volume = 4.2569134e-06. Max volume = 0.17870817.  Total volume = 134.92149.  Cell volumes OK.
+    Mesh non-orthogonality Max: 33.285768 average: 6.0522589
+    Max skewness = 0.80298017 OK.
+Mesh OK.
+=========== moving_Re150_release_Ur5_medium_dt0.0025 -time 160
+    cells:            28663
+    Max aspect ratio = 15.377321 OK.
+    Min volume = 4.2569133e-06. Max volume = 0.17870817.  Total volume = 134.92149.  Cell volumes OK.
+    Mesh non-orthogonality Max: 33.231378 average: 6.7508811
+    Max skewness = 0.80298017 OK.
+Mesh OK.

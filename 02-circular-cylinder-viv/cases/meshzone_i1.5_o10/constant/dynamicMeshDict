@@ -1,0 +1,50 @@
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      dynamicMeshDict;
+}
+
+mover
+{
+    type            motionSolver;
+    libs            ("libfvMeshMovers.so" "libsixDoFRigidBodyMotion.so");
+    motionSolver    sixDoFRigidBodyMotion;
+
+    patches         (cylinder);
+    innerDistance   1.5;
+    outerDistance   10;
+    test            true;       // force = mass*g only, no flow
+
+    mass            1;
+    centreOfMass    (0 0 0);
+    momentOfInertia (1 1 1);
+    orientation     (1 0 0  0 1 0  0 0 1);
+    angularMomentum (0 0 0);
+    g               (8 9.8 0);
+    rho             rhoInf;
+    rhoInf          1;
+    report          on;
+
+    solver
+    {
+        type symplectic;
+    }
+
+    constraints
+    {
+        planeConstraint
+        {
+            sixDoFRigidBodyMotionConstraint plane;
+            normal          (0 0 1);
+        }
+        noRotation
+        {
+            sixDoFRigidBodyMotionConstraint orientation;
+        }
+    }
+
+    restraints
+    {
+    }
+}

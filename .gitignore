@@ -80,3 +80,6 @@ venv/
 
 # ERCOFTAC reference data: redistribution rights not established (see validation/reference_data/README.md)
 01-ahmed-body/validation/reference_data/*.dat
+
+# OpenFOAM: blending field written by sixDoFRigidBodyMotion at start-up (generated)
+motionScale

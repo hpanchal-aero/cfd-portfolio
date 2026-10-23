@@ -1,0 +1,6 @@
+sixDoFRigidBodyState
+{
+    type        sixDoFRigidBodyState;
+    libs        ("libsixDoFRigidBodyState.so");
+    angleUnits  degrees;
+}

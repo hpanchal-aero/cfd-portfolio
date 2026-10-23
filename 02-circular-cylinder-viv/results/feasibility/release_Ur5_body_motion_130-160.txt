@@ -1,0 +1,32 @@
+states read: 24000 steps, t = 100.0025 .. 160.0000
+stiffness k = 0.315768
+
+local maxima of y (time, y):
+   103.7900  +0.1210
+   109.3625  +0.3639
+   114.8150  +0.5176
+   120.1575  +0.5734
+   125.4575  +0.5882
+   130.7475  +0.5918
+   136.0400  +0.5926
+   141.3300  +0.5929
+   146.6225  +0.5932
+   151.9175  +0.5936
+   157.2125  +0.5942
+
+window [130, 160]: 5 upward y crossings
+    134.7170
+    140.0090
+    145.3019
+    150.5960
+    155.8915
+whole periods: 4 over [134.7170, 155.8915]; body period 5.2936, frequency 0.18891
+y amplitude (max-min)/2 = 0.5938, mean y = +0.00016, mean x = 0.32752, x peak-to-peak = 0.0544
+
+forces over the same whole periods (8470 samples):
+  mean Cd = 2.06909, mean Cl = +0.00147, Cl rms about mean = 0.28898
+  Cl upward crossings: 4, mean period 5.2964, frequency 0.18881
+
+force balance in x:  k*mean(x)/(0.5*Aref) = 2.06842  vs mean Cd = 2.06909  ->  -0.03 %  (tol 3 %)  PASS
+force balance in y:  k*mean(y)/(0.5*Aref) = +0.00099  vs mean Cl = +0.00147  (difference -0.00048, information only)
+(startTime of this run: 100)
