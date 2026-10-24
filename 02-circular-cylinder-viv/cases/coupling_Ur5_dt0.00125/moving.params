@@ -1,0 +1,6 @@
+fn 0.2
+m 0.19996237
+k 0.31576792
+m* 2.546 (provisional), L 0.1, D 1
+integrator Newmark
+nOuterCorrectors 3

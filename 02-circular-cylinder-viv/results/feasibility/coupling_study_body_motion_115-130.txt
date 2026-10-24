@@ -1,0 +1,106 @@
+=========== moving_Re150_release_Ur5_medium_dt0.0025
+states read: 24000 steps, t = 100.0025 .. 160.0000
+stiffness k = 0.315768
+
+local maxima of y (time, y):
+   103.7900  +0.1210
+   109.3625  +0.3639
+   114.8150  +0.5176
+   120.1575  +0.5734
+   125.4575  +0.5882
+   130.7475  +0.5918
+   136.0400  +0.5926
+   141.3300  +0.5929
+   146.6225  +0.5932
+   151.9175  +0.5936
+   157.2125  +0.5942
+
+window [115, 130]: 3 upward y crossings
+    118.7540
+    124.0710
+    129.3669
+whole periods: 2 over [118.7540, 129.3669]; body period 5.3064, frequency 0.18845
+y amplitude (max-min)/2 = 0.5875, mean y = +0.00083, mean x = 0.32685, x peak-to-peak = 0.0632
+
+forces over the same whole periods (4245 samples):
+  mean Cd = 2.06390, mean Cl = +0.02019, Cl rms about mean = 0.29379
+  Cl upward crossings: 2, mean period 5.4402, frequency 0.18382
+
+force balance in x:  k*mean(x)/(0.5*Aref) = 2.06417  vs mean Cd = 2.06390  ->  +0.01 %  (tol 3 %)  PASS
+force balance in y:  k*mean(y)/(0.5*Aref) = +0.00527  vs mean Cl = +0.02019  (difference -0.01492, information only)
+(startTime of this run: 100)
+=========== coupling_Ur5_nO2
+states read: 12000 steps, t = 100.0025 .. 130.0000
+stiffness k = 0.315768
+
+local maxima of y (time, y):
+   103.7850  +0.1212
+   109.3500  +0.3647
+   114.7925  +0.5188
+   120.1225  +0.5746
+   125.4075  +0.5892
+
+window [115, 130]: 3 upward y crossings
+    118.7238
+    124.0262
+    129.3071
+whole periods: 2 over [118.7238, 129.3071]; body period 5.2916, frequency 0.18898
+y amplitude (max-min)/2 = 0.5885, mean y = +0.00083, mean x = 0.32810, x peak-to-peak = 0.0631
+
+forces over the same whole periods (4233 samples):
+  mean Cd = 2.07123, mean Cl = +0.01997, Cl rms about mean = 0.30189
+  Cl upward crossings: 2, mean period 5.4200, frequency 0.18450
+
+force balance in x:  k*mean(x)/(0.5*Aref) = 2.07208  vs mean Cd = 2.07123  ->  +0.04 %  (tol 3 %)  PASS
+force balance in y:  k*mean(y)/(0.5*Aref) = +0.00524  vs mean Cl = +0.01997  (difference -0.01473, information only)
+(startTime of this run: 100)
+=========== coupling_Ur5_nO1
+states read: 12000 steps, t = 100.0025 .. 130.0000
+stiffness k = 0.315768
+
+local maxima of y (time, y):
+   103.7925  +0.1219
+   109.3600  +0.3679
+   114.8000  +0.5236
+   120.1250  +0.5796
+   125.4075  +0.5940
+
+window [115, 130]: 3 upward y crossings
+    118.7301
+    124.0277
+    129.3031
+whole periods: 2 over [118.7301, 129.3031]; body period 5.2865, frequency 0.18916
+y amplitude (max-min)/2 = 0.5931, mean y = +0.00099, mean x = 0.32979, x peak-to-peak = 0.0639
+
+forces over the same whole periods (4229 samples):
+  mean Cd = 2.08225, mean Cl = +0.02096, Cl rms about mean = 0.28381
+  Cl upward crossings: 2, mean period 5.4169, frequency 0.18461
+
+force balance in x:  k*mean(x)/(0.5*Aref) = 2.08275  vs mean Cd = 2.08225  ->  +0.02 %  (tol 3 %)  PASS
+force balance in y:  k*mean(y)/(0.5*Aref) = +0.00626  vs mean Cl = +0.02096  (difference -0.01471, information only)
+(startTime of this run: 100)
+=========== coupling_Ur5_dt0.00125
+states read: 24000 steps, t = 100.0012 .. 130.0000
+stiffness k = 0.315768
+
+local maxima of y (time, y):
+   103.7887  +0.1210
+   109.3612  +0.3638
+   114.8113  +0.5175
+   120.1525  +0.5733
+   125.4525  +0.5880
+
+window [115, 130]: 3 upward y crossings
+    118.7506
+    124.0666
+    129.3614
+whole periods: 2 over [118.7506, 129.3614]; body period 5.3054, frequency 0.18849
+y amplitude (max-min)/2 = 0.5874, mean y = +0.00082, mean x = 0.32680, x peak-to-peak = 0.0632
+
+forces over the same whole periods (8489 samples):
+  mean Cd = 2.06359, mean Cl = +0.02011, Cl rms about mean = 0.29470
+  Cl upward crossings: 2, mean period 5.4383, frequency 0.18388
+
+force balance in x:  k*mean(x)/(0.5*Aref) = 2.06389  vs mean Cd = 2.06359  ->  +0.01 %  (tol 3 %)  PASS
+force balance in y:  k*mean(y)/(0.5*Aref) = +0.00521  vs mean Cl = +0.02011  (difference -0.01490, information only)
+(startTime of this run: 100)

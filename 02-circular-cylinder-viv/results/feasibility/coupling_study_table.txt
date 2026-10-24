@@ -1,0 +1,10 @@
+window t = 115-130; baseline = moving_Re150_release_Ur5_medium_dt0.0025
+case                                          f_body       A_y    mean x   mean Cd    Cl rms
+moving_Re150_release_Ur5_medium_dt0.0025     0.18845    0.5875   0.32685    2.0639   0.29379
+coupling_Ur5_nO2                             0.18898    0.5885   0.32810    2.0712   0.30189
+coupling_Ur5_nO1                             0.18916    0.5931   0.32979    2.0823   0.28381
+coupling_Ur5_dt0.00125                       0.18849    0.5874   0.32680    2.0636   0.29470
+differences against the baseline [%]:
+coupling_Ur5_nO2                              +0.281    +0.170    +0.382    +0.355    +2.757
+coupling_Ur5_nO1                              +0.377    +0.953    +0.899    +0.889    -3.397
+coupling_Ur5_dt0.00125                        +0.021    -0.017    -0.015    -0.015    +0.310

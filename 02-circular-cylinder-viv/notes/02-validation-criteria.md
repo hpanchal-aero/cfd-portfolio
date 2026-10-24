@@ -74,3 +74,27 @@ above leaves open; it does not change any floor.
   measurement uncertainty is not given in the parts of the paper that were read.
 - Not read, not used: the Appendix B data tables.
 - Mean Cd and Cl rms: no reference chosen yet (decision D9 open).
+
+## 2026-10-23: FSI validation (D10 = A, D11 = C)
+
+D10 = A: no separate forced-oscillation stage. The coupling is verified inside the FSI stage by
+sensitivity runs of one free-vibration case (outer correctors, integrator, time step, mesh).
+
+D11 = C: the FSI results are compared with Verma and De (arXiv 2211.03307) in two ways:
+1. the tabulated grid-study point of their Table I (Re 150, m* = 2, U_r = 6, zeta = 0, f* = 1;
+   finest grid A_y* = 0.536, C_L rms = 0.071; their model is 3D, L/D = 9.6); needs an extra run of
+   ours at m* = 2;
+2. their m* = 2.546 response curves at Re 150 (Figs. 5-8), digitised from the figures; the
+   digitising uncertainty is estimated and added to the reference uncertainty.
+
+Floors, fixed now (the same band rule as above: larger of the floor and numerical plus reference
+uncertainty):
+- transverse amplitude A_y* = [max(Y/D) + |min(Y/D)|]/2: 5 %, verdict;
+- response frequency (transverse, streamwise): 2 %, verdict;
+- streamwise amplitude A_x*: reported without verdict (the origin of X in their definition is not
+  resolved: from the relaxed spring or from the mean position);
+- C_L rms: reported without verdict (small difference of large terms near resonance).
+2D (ours) against their 3D model is stated as a limitation of the comparison, not as a floor.
+
+Disclosure: the Table I values above had been read before these floors were written. They were not
+used to choose the floors. No other reference value (figure data, tables of other cases) had been read.
