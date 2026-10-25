@@ -98,3 +98,29 @@ uncertainty):
 
 Disclosure: the Table I values above had been read before these floors were written. They were not
 used to choose the floors. No other reference value (figure data, tables of other cases) had been read.
+
+## 2026-10-25: domain term (D14 refined), further enlargement (D15), replicate (D16)
+
+The domain term of U_num was defined on 2026-10-19 (D7b, before any domain result was read) as the sum
+of the absolute single-boundary changes. At Re 150 the measured change to the combined enlarged domain
+(dom-big, 30/30/60 D) was larger than that sum for every quantity (% of the larger-domain value:
+St 0.966 against 0.884, mean Cd 1.516 against 1.058, Cl rms 2.474 against 1.391). D14 therefore
+becomes: the domain term is the measured change from the baseline to the largest combined-domain run.
+After D15 that run is dom-big2 (45/45/90 D); the step dom-big -> dom-big2 (St 0.373 %, mean Cd 0.460 %,
+Cl rms 0.133 %) shows that the series had not converged for St and mean Cd.
+- Where no combined-domain run exists (Re 100), the D7b sum is kept and the scripts print which basis
+  was used.
+- Floors are unchanged (St 2 %, mean Cd 3 %, Cl rms 10 %). The compared value of the primary St row is
+  still the baseline configuration (fixed before any gap was known). Added: a row for the production
+  domain dom-big (mesh and dt terms taken from the baseline, domain term = step to dom-big2) with a
+  verdict, and a line for dom-big2 without a verdict (its own domain term is not measured).
+- Effect at Re 150: U_num for St 1.032 -> 1.492 %, mean Cd 1.456 -> 2.381 %, Cl rms 4.251 -> 5.470 %.
+  No verdict changes (the floor decides each time).
+
+The replicate (D16, regenerated baseline mesh, Re 150) gives the resolution limit for identical input:
+St 0.000 %, mean Cd 0.002 %, Cl rms 0.004 %, Cl amplitude 0.003 %. It does not contain the sensitivity
+to the near-body mesh topology that changes with the domain extents; that sensitivity is not measured.
+
+Disclosure: the D14 refinement was decided after the dom-big result and the Williamson St gap
+(+1.42 % for the baseline) were known. The change makes U_num larger, the verdicts were PASS before
+and after, and it is motivated by the measured domain runs, not by the verdicts.

@@ -1,0 +1,14 @@
+{
+  "file": "cases/fixed_Re150_medium_dt0.0025_dom-big/postProcessing/forces/0/forceCoeffs.dat",
+  "t_start": 123.79019763818964,
+  "t_end": 178.06493212345143,
+  "n_periods": 10,
+  "St_zero_crossing": 0.18424779217879883,
+  "St_fft": 0.18424954878100705,
+  "Cd_mean": 1.3179350777893961,
+  "Cd_std": 0.016903458906627054,
+  "Cl_rms": 0.3523144813767245,
+  "Cl_amplitude": 0.49860595100000005,
+  "period_mean": 5.427473448526179,
+  "period_std": 1.6920666232578123e-05
+}

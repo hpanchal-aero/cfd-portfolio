@@ -3,7 +3,7 @@
 #
 # Usage:  launch_case.sh <case_dir>
 #
-# Log: <case_dir>/log.foamRun.
+# Log: <case_dir>/log.foamRun; the exit status of foamRun is written to <case_dir>/log.exit when it ends.
 # Refuses a case that is incomplete (missing dictionaries, mesh or fields, or missing the time
 # directory it must start from) and a case that already has a log (FORCE=1 overrides the log check).
 # Run it with its input closed:   launch_case.sh <case_dir> < /dev/null
@@ -30,7 +30,9 @@ if [ -e "$case_dir/log.foamRun" ] && [ -z "${FORCE:-}" ]; then
     fail "$case_dir/log.foamRun already exists (set FORCE=1 to overwrite it)"
 fi
 
+rm -f "$case_dir/log.exit"
+
 abs=$(cd "$case_dir" && pwd)
-nohup setsid bash --noprofile --norc -c "source /opt/openfoam11/etc/bashrc; cd '$abs'; foamRun > log.foamRun 2>&1" \
+nohup setsid bash --noprofile --norc -c "source /opt/openfoam11/etc/bashrc; cd '$abs'; foamRun > log.foamRun 2>&1; echo \"foamRun exit code \$? at \$(date -u +%FT%TZ)\" > log.exit" \
     < /dev/null > /dev/null 2>&1 &
 echo "launched $case_dir (startFrom $sf, startTime $st, pid $!)"

@@ -1,0 +1,14 @@
+{
+  "file": "cases/fixed_Re150_medium_dt0.0025_dom-regen/postProcessing/forces/stitched/forceCoeffs.dat",
+  "t_start": 122.10546280388323,
+  "t_end": 175.86069324633746,
+  "n_periods": 10,
+  "St_zero_crossing": 0.18602840909974605,
+  "St_fft": 0.18603016270339257,
+  "Cd_mean": 1.3378860083992188,
+  "Cd_std": 0.01740095915310575,
+  "Cl_rms": 0.36101510815652377,
+  "Cl_amplitude": 0.5110034495,
+  "period_mean": 5.375523044245424,
+  "period_std": 9.307893019660067e-06
+}
