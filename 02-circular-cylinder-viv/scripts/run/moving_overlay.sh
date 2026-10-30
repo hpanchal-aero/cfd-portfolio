@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 # moving_overlay.sh -- turn a derived fixed-cylinder case into a spring-mounted moving-mesh case.
 #
-# Usage:  moving_overlay.sh <case> <src_case> <fn>
+# Usage:  [MSTAR=<m*>] [INNER=<d>] [OUTER=<d>] moving_overlay.sh <case> <src_case> <fn> [<Cd_est>]
 #
 #   <case>      case made by derive_case.sh (fixed-cylinder files, restart state in place)
 #   <src_case>  the fixed case it was derived from (used only for the printed diffs)
 #   <fn>        natural frequency of the spring-mass system, in units of U/D (f_n = 1/U_r)
+#   <Cd_est>    optional: estimated mean drag coefficient. If given, the spring is pre-stretched:
+#               the anchor is placed upstream at x = -xbar_est, xbar_est = Cd_est * 0.5 * Aref / k
+#               (Aref = D*L = 0.1, rho = U = 1), so the body starts at x = 0 in static equilibrium
+#               with the mean drag. Default 0 = anchor at the start position (anchor (0 0 0)).
+#   MSTAR       environment variable: mass ratio m* = m / (rho (pi/4) D^2 L), default 2.546.
 #
 # Changes made (everything else is left as derived):
 #   0/U and <startTime>/U      cylinder: noSlip -> movingWallVelocity
@@ -14,17 +19,22 @@
 #   system/fvSolution          + correctPhi yes, + pcorr solver (as in the OpenFOAM 11 wingMotion tutorial)
 #   system/controlDict         + #include "sixDoFState"
 #   system/sixDoFState         sixDoFRigidBodyState function object
-#   moving.params              m, k, fn used
-# Mass: m = m* (pi/4) D^2 L with m* = 2.546, D = 1, L = 0.1 (provisional definition, see notes).
+#   moving.params              m, k, fn, Cd_est, anchor_x, m* used
+# Mass: m = m* (pi/4) D^2 L with D = 1, L = 0.1 (provisional definition, see notes).
 # Run with its input closed:   moving_overlay.sh ... < /dev/null
 
 set -uo pipefail
 
-dir=${1:?usage: moving_overlay.sh <case> <src_case> <fn>}
+dir=${1:?usage: moving_overlay.sh <case> <src_case> <fn> [<Cd_est>]}
 src=${2:?}
 fn=${3:?}
+cdest=${4:-0}
+mstar=${MSTAR:-2.546}
 
 fail() { echo "ERROR: $*" >&2; echo "RESULT: FAILED"; exit 1; }
+
+[[ "$cdest" =~ ^[0-9]+(\.[0-9]+)?$ ]] || fail "Cd_est must be a non-negative number, got '$cdest'"
+[[ "$mstar" =~ ^[0-9]+(\.[0-9]+)?$ ]] || fail "MSTAR must be a positive number, got '$mstar'"
 
 [ -f "$dir/system/controlDict" ] || fail "no $dir/system/controlDict"
 [ -d "$src/system" ] || fail "no $src/system"
@@ -34,8 +44,8 @@ st=$(awk '/^startTime/ {gsub(";","",$2); print $2}' "$dir/system/controlDict")
 [ -d "$dir/$st" ] || fail "start-time directory $dir/$st not found"
 [ -f "$dir/$st/U" ] || fail "$dir/$st/U not found"
 
-read -r m k < <(awk -v fn="$fn" 'BEGIN{pi=atan2(0,-1); m=2.546*pi/4*0.1; w=2*pi*fn; printf "%.8g %.8g\n", m, m*w*w}')
-[ -n "${m:-}" ] && [ -n "${k:-}" ] || fail "could not compute mass and stiffness"
+read -r m k xb ax < <(awk -v fn="$fn" -v cd="$cdest" -v ms="$mstar" 'BEGIN{pi=atan2(0,-1); m=ms*pi/4*0.1; w=2*pi*fn; k=m*w*w; xb=cd*0.05/k; ax=(xb>0)?-xb:0; printf "%.8g %.8g %.8g %.8g\n", m, k, xb, ax}')
+[ -n "${m:-}" ] && [ -n "${k:-}" ] && [ -n "${ax:-}" ] || fail "could not compute mass, stiffness and anchor"
 
 # --- 1. moving-wall velocity condition on the cylinder
 for f in "$dir/0/U" "$dir/$st/U"; do
@@ -107,7 +117,7 @@ mover
     innerDistance   ${INNER:-1.5};   // rigid out to this distance from the wall [D]; tested in notes (mesh-zone test)
     outerDistance   ${OUTER:-10};    // blend to zero at this distance from the wall [D]
 
-    mass            $m;     // m* (pi/4) D^2 L, m* = 2.546 (provisional)
+    mass            $m;     // m* (pi/4) D^2 L, m* = $mstar (provisional definition)
     centreOfMass    (0 0 0);
     momentOfInertia (1 1 1);    // rotation is locked by the orientation constraint
     orientation     (1 0 0  0 1 0  0 0 1);
@@ -140,7 +150,7 @@ mover
         spring
         {
             sixDoFRigidBodyMotionRestraint linearSpring;
-            anchor          (0 0 0);
+            anchor          ($ax 0 0);   // upstream of the start position by xbar_est = $xb (Cd_est = $cdest)
             refAttachmentPt (0 0 0);
             stiffness       $k;     // k = m (2 pi fn)^2, fn = $fn
             damping         0;
@@ -190,10 +200,10 @@ c = c.replace(old, old + '\n    #include        "sixDoFState"')
 open(cd, "w").write(c)
 EOF
 
-printf 'fn %s\nm %s\nk %s\nm* 2.546 (provisional), L 0.1, D 1\n' "$fn" "$m" "$k" > "$dir/moving.params"
+printf 'fn %s\nm %s\nk %s\nCd_est %s\nxbar_est %s\nanchor_x %s\nm* %s (provisional), L 0.1, D 1\n' "$fn" "$m" "$k" "$cdest" "$xb" "$ax" "$mstar" > "$dir/moving.params"
 
 # --- report
-echo "== parameters: fn = $fn  m = $m  k = $k"
+echo "== parameters: m* = $mstar  fn = $fn  m = $m  k = $k  Cd_est = $cdest  xbar_est = $xb  anchor_x = $ax"
 echo "== diff against $src"
 diff "$src/system/fvSolution" "$dir/system/fvSolution"
 diff "$src/system/controlDict" "$dir/system/controlDict"

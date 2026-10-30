@@ -1,0 +1,18 @@
+forces
+{
+    type            forceCoeffs;
+    libs            ("libforces.so");
+    writeControl    timeStep;
+    writeInterval   1;
+    patches         (cylinder);
+    rho             rhoInf;      // incompressible solver: kinematic pressure
+    rhoInf          1;
+    log             true;
+    liftDir         (0 1 0);
+    dragDir         (1 0 0);
+    CofR            (0 0 0);
+    pitchAxis       (0 0 1);
+    magUInf         1;
+    lRef            1;           // D
+    Aref            0.1;         // D x slab thickness (0.1 D): must match --thickness in the mesh
+}
