@@ -124,3 +124,11 @@ to the near-body mesh topology that changes with the domain extents; that sensit
 Disclosure: the D14 refinement was decided after the dom-big result and the Williamson St gap
 (+1.42 % for the baseline) were known. The change makes U_num larger, the verdicts were PASS before
 and after, and it is motivated by the measured domain runs, not by the verdicts.
+
+## 2026-11-01: reference for mean Cd at Re 150 (D9 = C, D25 = A)
+Reference: Henderson, Phys. Fluids 7, 2102 (1995), Table I fit (2D simulations): C_D = 1.33336 at Re 150. Code-to-code, not
+validation against experiment. The paper states no uncertainty, so U_ref = 0 and the floor (3 %) applies, as written above.
+Floors are unchanged (St 2 %, mean Cd 3 %, Cl rms 10 %). The St verdict against Williamson (1989) is unchanged; Henderson's
+2D St data (through the Williamson and Brown 1998 fits) are added as code-to-code lines without a verdict. Cl rms: no reference
+found, reported without verdict. Disclosure: our Cd and St values for every row were known before the reference was computed;
+no simulation or analysis setting was changed afterwards. Details: notes/12-fixed-cylinder-code-to-code-Re150.md.

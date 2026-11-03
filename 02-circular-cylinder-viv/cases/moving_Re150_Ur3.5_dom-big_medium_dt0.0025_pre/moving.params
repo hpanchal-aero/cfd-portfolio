@@ -1,0 +1,9 @@
+fn 0.2857142857
+m 0.19996237
+k 0.64442433
+Cd_est 1.50
+xbar_est 0.11638294
+anchor_x -0.11638294
+m* 2.546 (provisional), L 0.1, D 1
+integrator Newmark
+nOuterCorrectors 3

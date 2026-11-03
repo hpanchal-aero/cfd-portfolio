@@ -1,0 +1,58 @@
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      dynamicMeshDict;
+}
+
+mover
+{
+    type            motionSolver;
+    libs            ("libfvMeshMovers.so" "libsixDoFRigidBodyMotion.so");
+    motionSolver    sixDoFRigidBodyMotion;
+
+    patches         (cylinder);
+    innerDistance   1.5;   // rigid out to this distance from the wall [D]; tested in notes (mesh-zone test)
+    outerDistance   10;    // blend to zero at this distance from the wall [D]
+
+    mass            0.19996237;     // m* (pi/4) D^2 L, m* = 2.546 (provisional definition)
+    centreOfMass    (0 0 0);
+    momentOfInertia (1 1 1);    // rotation is locked by the orientation constraint
+    orientation     (1 0 0  0 1 0  0 0 1);
+    angularMomentum (0 0 0);
+    g               (0 0 0);
+    rho             rhoInf;
+    rhoInf          1;
+    report          on;
+
+    solver
+    {
+        type Newmark;
+    }
+
+    constraints
+    {
+        planeConstraint
+        {
+            sixDoFRigidBodyMotionConstraint plane;
+            normal          (0 0 1);
+        }
+        noRotation
+        {
+            sixDoFRigidBodyMotionConstraint orientation;
+        }
+    }
+
+    restraints
+    {
+        spring
+        {
+            sixDoFRigidBodyMotionRestraint linearSpring;
+            anchor          (-0.49074412 0 0);   // upstream of the start position by xbar_est = 0.49074412 (Cd_est = 1.29)
+            refAttachmentPt (0 0 0);
+            stiffness       0.13143306;     // k = m (2 pi fn)^2, fn = 0.1290322581
+            damping         0;
+            restLength      0;
+        }
+    }
+}

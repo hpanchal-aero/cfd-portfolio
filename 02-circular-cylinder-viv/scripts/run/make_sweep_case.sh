@@ -9,6 +9,8 @@
 #             to the case folder name (for example the Verma & De Table I case: U_r 6, m* 2).
 #
 # Source: cases/fixed_Re150_medium_dt0.0025_dom-big (restart from t = 200, first chunk ends at t = 300).
+# DOM=<tag> (env var, default dom-big) selects another fixed-cylinder source domain, e.g. DOM=dom-big2 (45/45/90 D); the case name carries the tag.
+# MESH=<level> (env var, default medium) selects the mesh level of the fixed-cylinder source, e.g. MESH=fine; the case name carries the level.
 # Creates: cases/moving_Re150_Ur<U_r>_dom-big_medium_dt0.0025_pre[_ms<m*>]
 # Independent check: mass, stiffness and anchor in constant/dynamicMeshDict are re-derived in Python.
 
@@ -29,8 +31,10 @@ cd "$root" || fail "cannot cd to $root"
 
 if [ "$mstar" = "2.546" ]; then sfx=""; else sfx="_ms${mstar}"; fi
 
-src=cases/fixed_Re150_medium_dt0.0025_dom-big
-dst=cases/moving_Re150_Ur${ur}_dom-big_medium_dt0.0025_pre${sfx}
+dom=${DOM:-dom-big}
+mesh=${MESH:-medium}
+src=cases/fixed_Re150_${mesh}_dt0.0025_${dom}
+dst=cases/moving_Re150_Ur${ur}_${dom}_${mesh}_dt0.0025_pre${sfx}
 
 [ -d "$src/200" ] || fail "$src/200 not found (restart state)"
 [ ! -e "$dst" ]   || fail "$dst already exists"
