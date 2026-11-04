@@ -145,3 +145,27 @@ Numerical terms of A_y* (indicative, three different cases): domain 0.24 % (U_r 
 time step 0.02 % (U_r 5, note 08); simple sum about 0.5 % (my arithmetic). None is measured at the Table I point (m* = 2), so this is an indicative size,
 not a formal uncertainty budget. D11 band for A_y* = larger of 5 % and (numerical + reference uncertainty, U_ref = 0): 5 %. Table I A_y* (+2.0 %): PASS.
 The +2.0 % is larger than the numerical terms, so it is not explained by them; its origin is not tested.
+
+## 13. Flow videos and re-rendered stills (appended 2026-11-04), D28 = B, D29 = yes
+Method: dense-output re-runs. scripts/run/make_video_case.sh copies a settled case to ~/work_scratch/p02/video/<label> (outside the repository) and
+restarts it from its last saved time minus 20 with writeInterval 0.2 (100 snapshots, 13 MB each); scripts/run/launch_videos.sh holds the 13-row table
+(U_r 6 was made by hand: 380-400). Videos (D28 = B): vorticity, U_r 3, 3.5, 4.5, 6, 7.75, 8, 17; 100 frames at 20 fps = 5 s, 0.46-0.63 MB each
+(scripts/viz/flow_video.py, results/videos). The other six cases (U_r 4, 5, 6 with m* = 2, 7, 7.5, 11) were re-run only for their stills.
+Restart check (force record against the original run, same time steps; pass line 1e-4 of the signal range after the first 0.1 time units, fixed before reading):
+U_r 6 prototype: after 0.1 time units |dCd| <= 5e-8, |dCl| <= 3e-8; in the first 0.1 time units |dCd| 9.0e-4 (1.85e-3 of the range), |dCl| 6.6e-5: a start-up
+effect (note 10: first step after a restart is first-order). The other 12 cases: late differences / range at most 2.9e-6 (Cd) and 3.7e-6 (Cl); first 0.1 time
+units |dCd| 4e-5 to 4.2e-3. U_r 8: the original run had a force folder 680 (restart at 680), so that comparison is restart against restart (identical);
+the start-up effect is visible between the original folders 600 and 680. fpe 1 (start-up line), NUL 0, Courant max <= 0.46 in all runs.
+Cost (measured): single job, 20 time units with 100 snapshots: 5029 s (1.40 h); six jobs at once: 2.03-2.10 h each (first batch), 1.98-2.02 h each (second batch).
+The second batch was lost to a power cut at 03:05 UTC on 2026-11-04 (about 1.8 of 20 time units done) and restarted from scratch.
+Stills: all 13 cases from the dense snapshots, at the highest cylinder y of the last 20 time units (scripts/viz/make_all_stills.sh, flow_snapshots.py);
+chosen y is 98.8-99.9 % of the settled amplitude for the settled cases. The earlier stills used saves every 20 time units and had arbitrary phase
+(e.g. y = -0.017 for m* = 2). Modulated cases: U_r 3.5 and 4 show one 20-unit stretch (y = +0.258 and +0.475).
+Colour limits (all cases): vorticity +-3.5 (99.5th percentile of |w_z| in the wake at most 2.87), pressure +-1.3 (p range over the 13 cases -1.108 .. +0.643),
+speed 0 .. 1.7 (max 1.505). Style (scripts/viz/flow_style.py): black background, black-centred scale, y ruler with pointer, dashed y = 0 line, fixed crosshair
+(the model has 2 translational DOF and no rotation).
+Comparison figures: results/comparisons/vorticity_grid.png and pressure_grid.png (scripts/viz/make_grid.py), 4 x 4 tiles, no new rendering.
+Reading of the vorticity grid (visual, not measured): the vortex rows lie farther apart in y for the large-swing cases (U_r 4, 4.5, 5) and are compact for U_r 3, 8, 11, 17.
+No wake-pattern classification (2S, 2P) was done.
+Limits: every picture is one instant; the dense window is 20 time units (about 3 periods); I have not seen the videos myself (the user judged them); the pressure pictures
+have low contrast (the scale must stay common to all cases).

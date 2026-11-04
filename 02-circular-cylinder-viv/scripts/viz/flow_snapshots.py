@@ -11,6 +11,7 @@ Usage (user packages are needed, so no -I):
   <out_root>  default results/figures
 
 Same view and colour limits for every case (see FIELDS): window x = -6 .. 15, y = -6 .. 6 (D = 1).
+The look (dark background, colour scales, motion cues) is shared with flow_video.py: see flow_style.py.
 Pressure is the kinematic pressure p/rho of the solver; with U = 1 the picture shows p/(rho U^2) = Cp/2.
 Lighting is off, so the colours are exactly those of the colour bar.
 Creates an empty <case_dir>/case.foam if missing (ignored by git).
@@ -21,14 +22,17 @@ import sys
 import numpy as np
 import pyvista as pv
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import flow_style as fs
+
 pv.OFF_SCREEN = True
 
 XC, YC, HALF_HEIGHT = 4.5, 0.0, 6.0
 SIZE = (1400, 800)
 FIELDS = {
-    "pressure": dict(key="p", cmap="RdBu_r", clim=(-1.3, 1.3), caption="pressure p/(rho U^2)"),
-    "velocity": dict(key="|U|", cmap="viridis", clim=(0.0, 1.7), caption="speed (velocity magnitude) U/U_inf"),
-    "vorticity": dict(key="wz", cmap="RdBu_r", clim=(-3.5, 3.5), caption="spanwise vorticity w_z D/U_inf"),
+    "pressure": dict(key="p", clim=(-1.3, 1.3), caption="pressure p/(rho U^2)"),
+    "velocity": dict(key="|U|", clim=(0.0, 1.7), caption="speed (velocity magnitude) U/U_inf"),
+    "vorticity": dict(key="wz", clim=(-3.5, 3.5), caption="spanwise vorticity w_z D/U_inf"),
 }
 
 
@@ -57,15 +61,12 @@ def main():
 
     times = [t for t in r.time_values if t0 <= t <= t1 and t > 0]
     if not times:
-        sys.exit("no saved time in [%g, %g]; saved: %s" % (t0, t1, list(r.time_values)))
-    cys = []
-    for t in times:
-        _, cx, cy = read_time(r, t)
-        cys.append(cy)
-        print("  t = %7.1f   cylinder centre x = %+.4f  y = %+.4f" % (t, cx, cy))
+        sys.exit("no saved time in [%g, %g]; saved: %s" % (t0, t1, list(r.time_values)[:10]))
+    cys = [read_time(r, t)[2] for t in times]
     best = times[int(np.argmax(cys))]
     g, cx, cy = read_time(r, best)
-    print("chosen: t = %g (highest cylinder y = %+.4f)" % (best, cy))
+    print("%d saved times in [%g, %g]; chosen t = %g (highest cylinder y = %+.4f, x = %+.4f)" % (
+        len(times), t0, t1, best, cy, cx))
 
     g.point_data["|U|"] = np.linalg.norm(g.point_data["U"], axis=1)
     d = g.compute_derivative(scalars="U", vorticity=True)
@@ -79,21 +80,17 @@ def main():
     os.makedirs(out, exist_ok=True)
     for name, f in FIELDS.items():
         p = pv.Plotter(off_screen=True, window_size=SIZE)
-        p.set_background("#cfcfcf")
-        p.add_mesh(g, scalars=f["key"], cmap=f["cmap"], clim=f["clim"], show_edges=False,
-                   lighting=False,
-                   scalar_bar_args=dict(title=" ", vertical=False, position_x=0.3,
-                                        position_y=0.04, width=0.4, height=0.06, color="black"))
-        disc = pv.Circle(radius=0.5, resolution=120)
-        disc.translate((cx, cy, 0.2), inplace=True)
-        p.add_mesh(disc, color="#303030", lighting=False)
+        p.set_background(fs.BG)
+        p.add_mesh(g, scalars=f["key"], cmap=fs.CMAP[name], clim=f["clim"], show_edges=False, lighting=False,
+                   scalar_bar_args=fs.scalar_bar_args())
+        fs.add_cues(p, cx, cy)
         p.camera.parallel_projection = True
         p.camera.focal_point = (XC, YC, 0.05)
         p.camera.position = (XC, YC, 50.0)
         p.camera.up = (0, 1, 0)
         p.camera.parallel_scale = HALF_HEIGHT
         p.add_text("%s   %s   t = %g   cylinder y = %+.3f D" % (label, f["caption"], best, cy),
-                   position="upper_left", font_size=12, color="black")
+                   position="upper_left", font_size=12, color=fs.FG)
         path = os.path.join(out, name + ".png")
         p.screenshot(path)
         p.close()
