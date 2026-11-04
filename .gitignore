@@ -83,3 +83,6 @@ venv/
 
 # OpenFOAM: blending field written by sixDoFRigidBodyMotion at start-up (generated)
 motionScale
+
+# Project 02 working notes: local only (reader-facing docs live in docs/); history is rebuilt without them before publication
+02-circular-cylinder-viv/notes/
