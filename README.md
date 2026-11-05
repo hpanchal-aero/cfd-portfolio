@@ -31,7 +31,7 @@ The sequence is intentional: establish reliable fundamentals first, then introdu
 | #  | Project                                                | Status          | Focus                                                                                           |
 | -- | ------------------------------------------------------ | --------------  | ----------------------------------------------------------------------------------------------- |
 | 01 | [**Ahmed Body**](01-ahmed-body/)                       | 🟢 Completed    | External aerodynamics, separated flow, k–ω SST RANS at 25° and 35° rear slant, compared with ERCOFTAC wake data; mesh independence and drag validation still open |
-| 02 | [**Circular Cylinder VIV**](02-circular-cylinder-viv/) | 🟡 In progress  | Vortex shedding, Strouhal number, unsteady CFD, fluid–structure interaction                     |
+| 02 | [**Circular Cylinder VIV**](02-circular-cylinder-viv/) | 🟢 Completed    | Vortex shedding, Strouhal number, unsteady CFD, fluid–structure interaction                     |
 | 03 | [**Finite Wing / Wingtip Vortex**](03-finite-wing/)    | ⚪ Planned      | 3D aerodynamics, induced drag, aspect-ratio effects, wingtip vortex formation                   |
 | 04 | [**Supersonic Wedge**](04-supersonic-wedge/)           | ⚪ Planned      | Compressible CFD, oblique shock formation, analytical validation                                |
 | 05 | [**RAE2822 Transonic Airfoil**](05-rae2822/)           | ⚪ Planned      | Transonic flow, shock–boundary-layer interaction, experimental validation                       |
