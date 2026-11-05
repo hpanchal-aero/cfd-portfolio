@@ -20,11 +20,11 @@ solver          incompressibleFluid;
 
 startFrom       startTime;
 
-startTime       200;
+startTime       300;
 
 stopAt          endTime;
 
-endTime         300;
+endTime         400;
 
 deltaT          0.0025;
 
